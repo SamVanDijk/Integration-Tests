@@ -40,6 +40,7 @@ import org.springframework.jms.core.JmsTemplate;
 import com.alliander.osgp.acceptancetests.OslpTestUtils;
 import com.alliander.osgp.acceptancetests.ProtocolInfoTestUtils;
 import com.alliander.osgp.adapter.domain.publiclighting.infra.jms.ws.WebServiceResponseMessageSender;
+import com.alliander.osgp.adapter.protocol.oslp.application.config.QualifierProtocolOslp;
 import com.alliander.osgp.adapter.protocol.oslp.application.services.DeviceRegistrationService;
 import com.alliander.osgp.adapter.protocol.oslp.domain.entities.OslpDevice;
 import com.alliander.osgp.adapter.protocol.oslp.domain.entities.OslpDeviceBuilder;
@@ -153,18 +154,26 @@ public class GetStatusSteps {
 
     // Protocol Adapter fields
     @Autowired
+    @QualifierProtocolOslp
     private DeviceRegistrationService deviceRegistrationService;
     @Autowired
+    // @Qualifier("protocolOslpDeviceService")
+    @QualifierProtocolOslp
     private OslpDeviceService oslpDeviceService;
     private OslpDevice oslpDevice;
     @Autowired
+    @QualifierProtocolOslp
     private OslpDeviceRepository oslpDeviceRepositoryMock;
 
     private OslpEnvelope oslpRequest;
     private OslpEnvelope oslpResponse;
     @Autowired
+    // @Qualifier("protocolOslpChannelHandlerClient")
+    @QualifierProtocolOslp
     private OslpChannelHandlerClient oslpChannelHandler;
     @Autowired
+    // @Qualifier("protocolOslpChannel")
+    @QualifierProtocolOslp
     private Channel channelMock;
 
     // Test fields

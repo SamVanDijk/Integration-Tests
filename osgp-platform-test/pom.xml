@@ -130,6 +130,12 @@
 
     <dependency>
       <groupId>com.alliander.osgp</groupId>
+      <artifactId>osgp-protocol-adapter-oslp-elster</artifactId>
+      <classifier>classes</classifier>
+    </dependency>
+
+    <dependency>
+      <groupId>com.alliander.osgp</groupId>
       <artifactId>signing-server</artifactId>
       <classifier>classes</classifier>
     </dependency>

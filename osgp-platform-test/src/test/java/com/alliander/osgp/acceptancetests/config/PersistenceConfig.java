@@ -11,6 +11,7 @@ import static org.mockito.Mockito.mock;
 
 import org.springframework.context.annotation.Bean;
 
+import com.alliander.osgp.adapter.protocol.oslp.application.config.QualifierProtocolOslp;
 import com.alliander.osgp.adapter.protocol.oslp.domain.repositories.OslpDeviceRepository;
 import com.alliander.osgp.adapter.ws.infra.specifications.JpaDeviceSpecifications;
 import com.alliander.osgp.adapter.ws.infra.specifications.JpaEventSpecifications;
@@ -136,6 +137,7 @@ public class PersistenceConfig {
 
     // OSLP
     @Bean
+    @QualifierProtocolOslp
     public OslpDeviceRepository oslpDeviceRepositoryMock() {
         return mock(OslpDeviceRepository.class);
     }

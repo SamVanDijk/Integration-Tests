@@ -42,6 +42,7 @@ import org.springframework.jms.core.JmsTemplate;
 import com.alliander.osgp.acceptancetests.OslpTestUtils;
 import com.alliander.osgp.acceptancetests.ProtocolInfoTestUtils;
 import com.alliander.osgp.adapter.domain.core.infra.jms.ws.WebServiceResponseMessageSender;
+import com.alliander.osgp.adapter.protocol.oslp.application.config.QualifierProtocolOslp;
 import com.alliander.osgp.adapter.protocol.oslp.application.mapping.OslpMapper;
 import com.alliander.osgp.adapter.protocol.oslp.application.services.DeviceRegistrationService;
 import com.alliander.osgp.adapter.protocol.oslp.domain.entities.OslpDevice;
@@ -144,17 +145,22 @@ public class SetEventNotificationsSteps {
 
     // Protocol Adapter fields
     @Autowired
+    @QualifierProtocolOslp
     private DeviceRegistrationService deviceRegistrationService;
     @Autowired
+    @Qualifier("protocolOslpDeviceService")
+    @QualifierProtocolOslp
     private OslpDeviceService oslpDeviceService;
     private OslpDevice oslpDevice;
     @Autowired
+    @QualifierProtocolOslp
     private OslpDeviceRepository oslpDeviceRepositoryMock;
 
     private OslpEnvelope oslpEnvelope;
     private OslpEnvelope oslpResponse;
     private OslpChannelHandlerClient oslpChannelHandler;
     @Autowired
+    @QualifierProtocolOslp
     private Channel channelMock;
 
     // Test fields
