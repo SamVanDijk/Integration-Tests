@@ -20,56 +20,59 @@
 
 
 
-!path ../Platform/osgp-adapter-ws-core/target/classes
-!path ../Platform/osgp-adapter-ws-core/target/test-classes
-!path ../Platform/osgp-adapter-ws-admin/target/classes
-!path ../Platform/osgp-adapter-ws-admin/target/test-classes
-!path ../Platform/osgp-adapter-ws-publiclighting/target/classes
-!path ../Platform/osgp-adapter-ws-publiclighting/target/test-classes
-!path ../Platform/osgp-adapter-ws-tariffswitching/target/classes
-!path ../Platform/osgp-adapter-ws-tariffswitching/target/test-classes
-!path ../Platform/osgp-adapter-ws-shared/target/classes
-!path ../Platform/osgp-adapter-ws-shared/target/test-classes
-!path ../Platform/osgp-adapter-ws-shared-db/target/classes
-!path ../Platform/osgp-adapter-ws-shared-db/target/test-classes
+!path ../../Platform/osgp-adapter-ws-core/target/classes
+!path ../../Platform/osgp-adapter-ws-core/target/test-classes
+!path ../../Platform/osgp-adapter-ws-admin/target/classes
+!path ../../Platform/osgp-adapter-ws-admin/target/test-classes
+!path ../../Platform/osgp-adapter-ws-publiclighting/target/classes
+!path ../../Platform/osgp-adapter-ws-publiclighting/target/test-classes
+!path ../../Platform/osgp-adapter-ws-tariffswitching/target/classes
+!path ../../Platform/osgp-adapter-ws-tariffswitching/target/test-classes
+!path ../../Platform/osgp-adapter-ws-shared/target/classes
+!path ../../Platform/osgp-adapter-ws-shared/target/test-classes
+!path ../../Platform/osgp-adapter-ws-shared-db/target/classes
+!path ../../Platform/osgp-adapter-ws-shared-db/target/test-classes
 
-!path ../Platform/osgp-adapter-domain-admin/target/classes
-!path ../Platform/osgp-adapter-domain-core/target/classes
-!path ../Platform/osgp-adapter-domain-publiclighting/target/classes
-!path ../Platform/osgp-adapter-domain-tariffswitching/target/classes
-!path ../Shared/osgp-dto/target/classes
+!path ../../Platform/osgp-adapter-domain-admin/target/classes
+!path ../../Platform/osgp-adapter-domain-core/target/classes
+!path ../../Platform/osgp-adapter-domain-publiclighting/target/classes
+!path ../../Platform/osgp-adapter-domain-tariffswitching/target/classes
+!path ../../Shared/osgp-dto/target/classes
 
-!path ../Platform/osgp-domain-publiclighting/target/classes
-!path ../Platform/osgp-domain-publiclighting/target/test-classes
-!path ../Platform/osgp-domain-tariffswitching/target/classes
-!path ../Platform/osgp-domain-tariffswitching/target/test-classes
-!path ../Platform/osgp-domain-core/target/classes
-!path ../Platform/osgp-domain-core/target/test-classes
+!path ../../Platform/osgp-domain-publiclighting/target/classes
+!path ../../Platform/osgp-domain-publiclighting/target/test-classes
+!path ../../Platform/osgp-domain-tariffswitching/target/classes
+!path ../../Platform/osgp-domain-tariffswitching/target/test-classes
+!path ../../Platform/osgp-domain-core/target/classes
+!path ../../Platform/osgp-domain-core/target/test-classes
 
-!path ../Platform/osgp-domain-logging/target/classes
-!path ../Platform/osgp-domain-logging/target/test-classes
+!path ../../Platform/osgp-domain-logging/target/classes
+!path ../../Platform/osgp-domain-logging/target/test-classes
 
-!path ../Shared/shared/target/classes
-!path ../Shared/shared/target/test-classes
+!path ../../Shared/shared/target/classes
+!path ../../Shared/shared/target/test-classes
 
-!path ../Platform/osgp-logging/target/classes
-!path ../Platform/osgp-logging/target/test-classes
+!path ../../Platform/osgp-logging/target/classes
+!path ../../Platform/osgp-logging/target/test-classes
 
-!path ../Platform/osgp-core/target/classes
-!path ../Platform/osgp-core/target/test-classes
+!path ../../Platform/osgp-core/target/classes
+!path ../../Platform/osgp-core/target/test-classes
 !path ../osgp-platform-test/target/test-classes
 
-!path ../Protocol-Adapter-OSLP/osgp-core-db-api/target/classes
-!path ../Protocol-Adapter-OSLP/osgp-core-db-api/target/test-classes
+!path ../../Protocol-Adapter-OSLP/osgp-core-db-api/target/classes
+!path ../../Protocol-Adapter-OSLP/osgp-core-db-api/target/test-classes
 
-!path ../Protocol-Adapter-OSLP/osgp-adapter-protocol-oslp/target/classes
-!path ../Protocol-Adapter-OSLP/osgp-adapter-protocol-oslp/target/test-classes
+!path ../../Protocol-Adapter-OSLP/osgp-adapter-protocol-oslp/target/classes
+!path ../../Protocol-Adapter-OSLP/osgp-adapter-protocol-oslp/target/test-classes
 
-!path ../Protocol-Adapter-OSLP/signing-server/target/classes
-!path ../Protocol-Adapter-OSLP/signing-server/target/test-classes
+!path ../../Protocol-Adapter-OSLP/osgp-adapter-protocol-oslp-elster/target/classes
+!path ../../Protocol-Adapter-OSLP/osgp-adapter-protocol-oslp-elster/target/test-classes
 
-!path ../Protocol-Adapter-OSLP/oslp/target/classes
-!path ../Protocol-Adapter-OSLP/oslp/target/test-classes
+!path ../../Protocol-Adapter-OSLP/signing-server/target/classes
+!path ../../Protocol-Adapter-OSLP/signing-server/target/test-classes
+
+!path ../../Protocol-Adapter-OSLP/oslp/target/classes
+!path ../../Protocol-Adapter-OSLP/oslp/target/test-classes
 
 
 !path ${MAVEN_REPO}/antlr/antlr/2.7.7/antlr-2.7.7.jar
@@ -77,28 +80,6 @@
 !path ${MAVEN_REPO}/ch/qos/logback/logback-classic/1.1.2/logback-classic-1.1.2.jar
 !path ${MAVEN_REPO}/ch/qos/logback/logback-core/1.1.2/logback-core-1.1.2.jar
 
-!path ${MAVEN_REPO}/com/alliander/osgp/osgp-adapter-domain-admin/${PLATFORM_VERSION}/osgp-adapter-domain-admin-${PLATFORM_VERSION}-classes.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/osgp-adapter-domain-core/${PLATFORM_VERSION}/osgp-adapter-domain-core-${PLATFORM_VERSION}-classes.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/osgp-adapter-domain-publiclighting/${PLATFORM_VERSION}/osgp-adapter-domain-publiclighting-${PLATFORM_VERSION}-classes.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/osgp-adapter-domain-tariffswitching/${PLATFORM_VERSION}/osgp-adapter-domain-tariffswitching-${PLATFORM_VERSION}-classes.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/osgp-adapter-ws-admin/${PLATFORM_VERSION}/osgp-adapter-ws-admin-${PLATFORM_VERSION}-classes.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/osgp-adapter-ws-core/${PLATFORM_VERSION}/osgp-adapter-ws-core-${PLATFORM_VERSION}-classes.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/osgp-adapter-ws-publiclighting/${PLATFORM_VERSION}/osgp-adapter-ws-publiclighting-${PLATFORM_VERSION}-classes.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/osgp-adapter-ws-shared/${PLATFORM_VERSION}/osgp-adapter-ws-shared-${PLATFORM_VERSION}.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/osgp-adapter-ws-shared-db/${PLATFORM_VERSION}/osgp-adapter-ws-shared-db-${PLATFORM_VERSION}.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/osgp-adapter-ws-tariffswitching/${PLATFORM_VERSION}/osgp-adapter-ws-tariffswitching-${PLATFORM_VERSION}-classes.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/osgp-core/${PLATFORM_VERSION}/osgp-core-${PLATFORM_VERSION}-classes.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/osgp-domain-core/${PLATFORM_VERSION}/osgp-domain-core-${PLATFORM_VERSION}.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/osgp-domain-logging/${PLATFORM_VERSION}/osgp-domain-logging-${PLATFORM_VERSION}.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/osgp-dto/${SHARED_VERSION}/osgp-dto-${SHARED_VERSION}.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/osgp-logging/${PLATFORM_VERSION}/osgp-logging-${PLATFORM_VERSION}.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/shared/${SHARED_VERSION}/shared-${SHARED_VERSION}.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/osgp-protocol-adapter-oslp/${PROTOCOL_ADAPTER_OSLP_VERSION}/osgp-protocol-adapter-oslp-${PROTOCOL_ADAPTER_OSLP_VERSION}-classes.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/oslp/${PROTOCOL_ADAPTER_OSLP_VERSION}/oslp-${PROTOCOL_ADAPTER_OSLP_VERSION}.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/signing-server/${PROTOCOL_ADAPTER_OSLP_VERSION}/signing-server-${PROTOCOL_ADAPTER_OSLP_VERSION}-classes.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/osgp-core-db-api/${PROTOCOL_ADAPTER_OSLP_VERSION}/osgp-core-db-api-${PROTOCOL_ADAPTER_OSLP_VERSION}.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/osgp-domain-publiclighting/${OSGP_VERSION}/osgp-domain-publiclighting-${OSGP_VERSION}.jar
-!path ${MAVEN_REPO}/com/alliander/osgp/osgp-domain-tariffswitching/${OSGP_VERSION}/osgp-domain-tariffswitching-${OSGP_VERSION}.jar
 
 !path ${MAVEN_REPO}/com/carrotsearch/java-sizeof/0.0.4/java-sizeof-0.0.4.jar
 !path ${MAVEN_REPO}/com/fasterxml/jackson/core/jackson-annotations/2.4.0/jackson-annotations-2.4.0.jar
