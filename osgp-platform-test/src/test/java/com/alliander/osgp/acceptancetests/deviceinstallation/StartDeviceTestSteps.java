@@ -126,27 +126,42 @@ public class StartDeviceTestSteps {
 
     @Autowired
     private DeviceRepository deviceRepositoryMock;
+
     @Autowired
     private OrganisationRepository organisationRepositoryMock;
+
     @Autowired
     private DeviceAuthorizationRepository deviceAuthorizationRepositoryMock;
+
     @Autowired
     private DeviceFunctionMappingRepository deviceFunctionMappingRepositoryMock;
+
     @Autowired
     private DeviceLogItemRepository deviceLogItemRepositoryMock;
 
     // Protocol Adapter fields
     @Autowired
+    @Qualifier("protocolOslpDeviceRegistrationService")
     private DeviceRegistrationService deviceRegistrationService;
+
     @Autowired
+    @Qualifier("protocolOslpOslpDeviceService")
     private OslpDeviceService oslpDeviceService;
+
+    @Qualifier("protocolOslpOslpDevice")
     private OslpDevice oslpDevice;
+
     @Autowired
+    @Qualifier("protocolOslpOslpDeviceRepository")
     private OslpDeviceRepository oslpDeviceRepositoryMock;
 
     private OslpEnvelope oslpRequest;
+
     private OslpEnvelope oslpResponse;
+
+    @Qualifier("protocolOslpOslpChannelHandlerClient")
     private OslpChannelHandlerClient oslpChannelHandler;
+
     @Autowired
     private Channel channelMock;
 
@@ -207,7 +222,7 @@ public class StartDeviceTestSteps {
         authorizations.add(new DeviceAuthorizationBuilder().withDevice(this.device).withOrganisation(this.organisation)
                 .withFunctionGroup(DeviceFunctionGroup.INSTALLATION).build());
         when(this.deviceAuthorizationRepositoryMock.findByOrganisationAndDevice(this.organisation, this.device))
-                .thenReturn(authorizations);
+        .thenReturn(authorizations);
 
         final List<DeviceFunction> deviceFunctions = new ArrayList<>();
         deviceFunctions.add(DeviceFunction.START_SELF_TEST);

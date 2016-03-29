@@ -209,12 +209,18 @@ public class VerifyAuthorizeDeviceFunctionSteps {
 
     // Protocol adapter fields
     @Autowired
+    @Qualifier("protocolOslpOslpDeviceService")
     private OslpDeviceService deviceService;
+
     private OslpDevice oslpDevice;
+
     @Autowired
+    @Qualifier("protocolOslpOslpDeviceRepository")
     private OslpDeviceRepository oslpDeviceRepositoryMock;
 
+    @Qualifier("protocolOslpOslpChannelHandlerClient")
     private OslpChannelHandlerClient oslpChannelHandler;
+
     @Autowired
     private Channel channelMock;
 

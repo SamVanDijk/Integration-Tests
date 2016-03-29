@@ -137,16 +137,27 @@ public class StopDeviceTestSteps {
 
     // Protocol Adapter fields
     @Autowired
+    @Qualifier("protocolOslpDeviceRegistrationService")
     private DeviceRegistrationService deviceRegistrationService;
+
     @Autowired
+    @Qualifier("protocolOslpOslpDeviceService")
     private OslpDeviceService oslpDeviceService;
+
+    @Qualifier("protocolOslpOslpDevice")
     private OslpDevice oslpDevice;
+
     @Autowired
+    @Qualifier("protocolOslpOslpDeviceRepository")
     private OslpDeviceRepository oslpDeviceRepositoryMock;
 
     private OslpEnvelope oslpRequest;
+
     private OslpEnvelope oslpResponse;
+
+    @Qualifier("protocolOslpOslpChannelHandlerClient")
     private OslpChannelHandlerClient oslpChannelHandler;
+
     @Autowired
     private Channel channelMock;
 
@@ -207,7 +218,7 @@ public class StopDeviceTestSteps {
         authorizations.add(new DeviceAuthorizationBuilder().withDevice(this.device).withOrganisation(this.organisation)
                 .withFunctionGroup(DeviceFunctionGroup.INSTALLATION).build());
         when(this.deviceAuthorizationRepositoryMock.findByOrganisationAndDevice(this.organisation, this.device))
-                .thenReturn(authorizations);
+        .thenReturn(authorizations);
 
         final List<DeviceFunction> deviceFunctions = new ArrayList<>();
         deviceFunctions.add(DeviceFunction.STOP_SELF_TEST);

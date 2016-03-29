@@ -39,7 +39,6 @@ import org.springframework.jms.core.JmsTemplate;
 import com.alliander.osgp.acceptancetests.OslpTestUtils;
 import com.alliander.osgp.acceptancetests.ProtocolInfoTestUtils;
 import com.alliander.osgp.adapter.domain.publiclighting.infra.jms.ws.WebServiceResponseMessageSender;
-import com.alliander.osgp.adapter.protocol.oslp.application.config.QualifierProtocolOslp;
 import com.alliander.osgp.adapter.protocol.oslp.application.services.DeviceRegistrationService;
 import com.alliander.osgp.adapter.protocol.oslp.domain.entities.OslpDevice;
 import com.alliander.osgp.adapter.protocol.oslp.domain.entities.OslpDeviceBuilder;
@@ -138,21 +137,27 @@ public class ResumeScheduleSteps {
 
     // Protocol Adapter fields
     @Autowired
-    @QualifierProtocolOslp
+    @Qualifier("protocolOslpDeviceRegistrationService")
     private DeviceRegistrationService deviceRegistrationService;
+
     @Autowired
-    @QualifierProtocolOslp
+    @Qualifier("protocolOslpOslpDeviceService")
     private OslpDeviceService oslpDeviceService;
+
     private OslpDevice oslpDevice;
+
     @Autowired
-    @QualifierProtocolOslp
+    @Qualifier("protocolOslpOslpDeviceRepository")
     private OslpDeviceRepository oslpDeviceRepositoryMock;
 
     private OslpEnvelope oslpRequest;
     private OslpEnvelope oslpResponse;
+
+    @Qualifier("protocolOslpOslpChannelHandlerClient")
     private OslpChannelHandlerClient oslpChannelHandler;
+
     @Autowired
-    @QualifierProtocolOslp
+    @Qualifier("protocolOslpChannel")
     private Channel channelMock;
 
     // Test fields
@@ -241,7 +246,7 @@ public class ResumeScheduleSteps {
         authorizations.add(new DeviceAuthorizationBuilder().withDevice(this.device).withOrganisation(this.organisation)
                 .withFunctionGroup(DeviceFunctionGroup.AD_HOC).build());
         when(this.deviceAuthorizationRepositoryMock.findByOrganisationAndDevice(this.organisation, this.device))
-                .thenReturn(authorizations);
+        .thenReturn(authorizations);
 
         final List<DeviceFunction> deviceFunctions = new ArrayList<>();
         deviceFunctions.add(DeviceFunction.RESUME_SCHEDULE);

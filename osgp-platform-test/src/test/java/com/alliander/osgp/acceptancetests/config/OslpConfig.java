@@ -28,13 +28,11 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 
 import com.alliander.osgp.acceptancetests.OslpTestUtils;
-import com.alliander.osgp.adapter.protocol.oslp.application.config.QualifierProtocolOslp;
 import com.alliander.osgp.adapter.protocol.oslp.application.mapping.OslpMapper;
 import com.alliander.osgp.adapter.protocol.oslp.device.FirmwareLocation;
 import com.alliander.osgp.adapter.protocol.oslp.infra.networking.OslpChannelHandlerClient;
@@ -59,108 +57,88 @@ public class OslpConfig {
     private static final String FIRMWARE_PATH = "firmware";
     private static final String FIRMWARE_FILE_EXTENSION = "zip";
 
-    @Bean
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpFirmwareLocation")
     @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
     public FirmwareLocation firmwareLocation() {
         return new FirmwareLocation(FIRMWARE_DOMAIN, FIRMWARE_PATH, FIRMWARE_FILE_EXTENSION);
     }
 
-    @Bean
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpOslpDecoder")
     public OslpDecoder oslpDecoder() throws InvalidKeySpecException, NoSuchAlgorithmException, IOException,
-            NoSuchProviderException {
+    NoSuchProviderException {
         return new OslpDecoder(this.oslpSignature(), this.oslpSignatureProvider());
     }
 
-    @Bean
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpPublicKey")
     public PublicKey publicKey() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException,
-            NoSuchProviderException {
+    NoSuchProviderException {
         return CertificateHelper.createPublicKeyFromBase64(OslpTestUtils.PUBLIC_KEY_BASE_64, OslpTestUtils.KEY_TYPE,
                 OslpTestUtils.provider());
     }
 
-    @Bean
-    @Qualifier("signingServerPrivateKey")
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpPrivateKey")
     public PrivateKey privateKey() throws IOException, InvalidKeySpecException, NoSuchAlgorithmException,
-            NoSuchProviderException {
+    NoSuchProviderException {
         return CertificateHelper.createPrivateKeyFromBase64(OslpTestUtils.PRIVATE_KEY_BASE_64, OslpTestUtils.KEY_TYPE,
                 OslpTestUtils.provider());
     }
 
-    @Bean
-    @Qualifier("signingServerSignatureProvider")
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpOslpSignatureProvider")
     public String oslpSignatureProvider() {
         return OslpTestUtils.provider();
     }
 
-    @Bean
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpSequenceNumberWindow")
     public Integer sequenceNumberWindow() {
         return OslpTestUtils.OSLP_SEQUENCE_NUMBER_WINDOW;
     }
 
-    @Bean
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpSequenceNumberMaximum")
     public Integer sequenceNumberMaximum() {
         return OslpTestUtils.OSLP_SEQUENCE_NUMBER_MAXIMUM;
     }
 
-    @Bean
-    @Qualifier("signingServerSignature")
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpOslpSignature")
     public String oslpSignature() {
         return OslpTestUtils.SIGNATURE;
     }
 
-    @Bean
-    @Qualifier("signingServerKeyType")
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpOslpKeyType")
     public String oslpKeyType() {
         return OslpTestUtils.KEY_TYPE;
     }
 
-    @Bean
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpconnectionTimeout")
     public int connectionTimeout() {
         return OSLP_TIMEOUT_CONNECT;
     }
 
-    @Bean
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpOslpPortClient")
     public int oslpPortClient() {
         return OSLP_PORT_CLIENT;
     }
 
-    @Bean
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpOslpPortClientLocal")
     public int oslpPortClientLocal() {
         return OSLP_PORT_CLIENTLOCAL;
     }
 
-    @Bean
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpOslpPortServer")
     public int oslpPortServer() {
         return OSLP_PORT_SERVER;
     }
 
-    @Bean
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpChannel")
     public Channel channelMock() {
         return mock(Channel.class);
     }
 
-    @Bean
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpOslpUtils")
     public OslpUtils oslpUtils() {
         return new OslpUtils();
     }
 
-    @Bean(destroyMethod = "releaseExternalResources")
-    @QualifierProtocolOslp
+    @Bean(destroyMethod = "releaseExternalResources", name="protocolOslpClientBootstrap")
     public ClientBootstrap clientBootstrap() {
         final ChannelFactory factory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
                 Executors.newCachedThreadPool());
@@ -168,7 +146,7 @@ public class OslpConfig {
         final ChannelPipelineFactory pipelineFactory = new ChannelPipelineFactory() {
             @Override
             public ChannelPipeline getPipeline() throws InvalidKeySpecException, NoSuchAlgorithmException, IOException,
-                    NoSuchProviderException {
+            NoSuchProviderException {
                 final ChannelPipeline pipeline = Channels.pipeline();
 
                 pipeline.addLast("oslpEncoder", new OslpEncoder());
@@ -193,8 +171,7 @@ public class OslpConfig {
         return bootstrap;
     }
 
-    @Bean(destroyMethod = "releaseExternalResources")
-    @QualifierProtocolOslp
+    @Bean(destroyMethod = "releaseExternalResources", name="protocolOslpServerBootstrap")
     public ServerBootstrap serverBootstrap() {
         final ChannelFactory factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(),
                 Executors.newCachedThreadPool());
@@ -204,7 +181,7 @@ public class OslpConfig {
         bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
             @Override
             public ChannelPipeline getPipeline() throws InvalidKeySpecException, NoSuchAlgorithmException, IOException,
-                    NoSuchProviderException {
+            NoSuchProviderException {
                 final ChannelPipeline pipeline = Channels.pipeline();
 
                 pipeline.addLast("oslpEncoder", new OslpEncoder());
@@ -224,47 +201,39 @@ public class OslpConfig {
         return bootstrap;
     }
 
-    @Bean
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpOslpSecurityHandler")
     public OslpSecurityHandler oslpSecurityHandler() {
         return new OslpSecurityHandler();
     }
 
-    @Bean
-//    @Qualifier("protocolOslpOslpChannelHandlerClient")
-    // @QualifierProtocolOslp
+    @Bean(name="protocolOslpOslpChannelHandlerClient")
     public OslpChannelHandlerClient oslpChannelHandlerClient() {
         return new OslpChannelHandlerClient();
     }
 
-    @Bean
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpOslpChannelHandlerServer")
     public OslpChannelHandlerServer oslpChannelHandlerServer() {
         return new OslpChannelHandlerServer();
     }
 
-    @Bean
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpChannelHandlerContext")
     public ChannelHandlerContext channelHandlerContextMock() {
         return mock(ChannelHandlerContext.class);
     }
 
-    @Bean
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpMessageEvent")
     public MessageEvent messageEvent() {
         return mock(MessageEvent.class);
     }
 
-    @Bean
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpPagingSettings")
     public PagingSettings oslpPagingSettings() {
         final PagingSettings settings = new PagingSettings(PAGING_MAXIMUM_PAGE_SIZE, PAGING_DEFAULT_PAGE_SIZE);
 
         return settings;
     }
 
-    @Bean
-    @QualifierProtocolOslp
+    @Bean(name="protocolOslpOslpMapper")
     public OslpMapper oslpMapper() {
         return new OslpMapper();
     }

@@ -141,16 +141,26 @@ public class GetPowerUsageHistorySteps {
 
     // Protocol Adapter fields
     @Autowired
+    @Qualifier("protocolOslpDeviceRegistrationService")
     private DeviceRegistrationService deviceRegistrationService;
+
     @Autowired
+    @Qualifier("protocolOslpOslpDeviceService")
     private OslpDeviceService oslpDeviceService;
+
+    @Qualifier("protocolOslpOslpDevice")
     private OslpDevice oslpDevice;
+
     @Autowired
+    @Qualifier("protocolOslpOslpDeviceRepository")
     private OslpDeviceRepository oslpDeviceRepositoryMock;
 
     private OslpEnvelope oslpRequest;
     private OslpEnvelope oslpResponse;
+
+    @Qualifier("protocolOslpOslpChannelHandlerClient")
     private OslpChannelHandlerClient oslpChannelHandler;
+
     @Autowired
     private Channel channelMock;
 

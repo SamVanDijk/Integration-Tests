@@ -141,17 +141,26 @@ public class SetTariffScheduleSteps {
 
     // Protocol Adapter fields
     @Autowired
+    @Qualifier("protocolOslpDeviceRegistrationService")
     private DeviceRegistrationService deviceRegistrationService;
 
     @Autowired
+    @Qualifier("protocolOslpOslpDeviceService")
     private OslpDeviceService oslpDeviceService;
+
+    @Qualifier("protocolOslpOslpDevice")
     private OslpDevice oslpDevice;
+
     @Autowired
+    @Qualifier("protocolOslpOslpDeviceRepository")
     private OslpDeviceRepository oslpDeviceRepositoryMock;
 
     private OslpEnvelope oslpEnvelope;
     private OslpEnvelope oslpMessage;
+
+    @Qualifier("protocolOslpOslpChannelHandlerClient")
     private OslpChannelHandlerClient oslpChannelHandler;
+
     @Autowired
     private Channel channelMock;
 
@@ -276,7 +285,7 @@ public class SetTariffScheduleSteps {
         authorizations.add(new DeviceAuthorizationBuilder().withDevice(this.device).withOrganisation(this.organisation)
                 .withFunctionGroup(DeviceFunctionGroup.TARIFF_SCHEDULING).build());
         when(this.deviceAuthorizationRepositoryMock.findByOrganisationAndDevice(this.organisation, this.device))
-                .thenReturn(authorizations);
+        .thenReturn(authorizations);
 
         final List<DeviceFunction> deviceFunctions = new ArrayList<>();
         deviceFunctions.add(DeviceFunction.SET_TARIFF_SCHEDULE);

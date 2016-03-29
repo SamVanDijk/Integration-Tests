@@ -168,19 +168,25 @@ public class SetLightSteps {
 
     // Protocol Adapter fields
     @Autowired
-    @QualifierProtocolOslp
+    @Qualifier("protocolOslpDeviceRegistrationService")
     private DeviceRegistrationService deviceRegistrationService;
+
     @Autowired
-    @QualifierProtocolOslp
+    @Qualifier("protocolOslpOslpDeviceService")
     private OslpDeviceService oslpDeviceService;
+
     private OslpDevice oslpDevice;
+
     @Autowired
-    @QualifierProtocolOslp
+    @Qualifier("protocolOslpOslpDeviceRepository")
     private OslpDeviceRepository oslpDeviceRepositoryMock;
 
     private OslpEnvelope oslpEnvelope;
     private OslpEnvelope oslpMessage;
+
+    @Qualifier("protocolOslpOslpChannelHandlerClient")
     private OslpChannelHandlerClient oslpChannelHandler;
+
     @Autowired
     @QualifierProtocolOslp
     private Channel channelMock;
@@ -293,7 +299,7 @@ public class SetLightSteps {
         authorizations.add(new DeviceAuthorizationBuilder().withDevice(this.device).withOrganisation(this.organisation)
                 .withFunctionGroup(DeviceFunctionGroup.AD_HOC).build());
         when(this.deviceAuthorizationRepositoryMock.findByOrganisationAndDevice(this.organisation, this.device))
-                .thenReturn(authorizations);
+        .thenReturn(authorizations);
 
         final List<DeviceFunction> deviceFunctions = new ArrayList<>();
         deviceFunctions.add(DeviceFunction.SET_LIGHT);

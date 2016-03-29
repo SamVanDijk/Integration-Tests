@@ -134,17 +134,26 @@ public class UpdateFirmwareSteps {
 
     // Protocol adapter fields
     @Autowired
+    @Qualifier(value = "protocolOslpDeviceRegistrationService")
     private DeviceRegistrationService deviceRegistrationService;
 
     @Autowired
+    @Qualifier(value = "protocolOslpOslpDeviceService")
     private OslpDeviceService oslpDeviceService;
+
     @Autowired
+    @Qualifier(value = "protocolOslpOslpDeviceRepository")
     private OslpDeviceRepository oslpDeviceRepositoryMock;
+
+    @Qualifier(value = "protocolOslpOslpDevice")
     private OslpDevice oslpDevice;
 
     @Autowired
     private Channel channelMock;
+
+    @Qualifier(value = "protocolOslpOslpChannelHandlerClient")
     private OslpChannelHandlerClient oslpChannelHandler;
+
     private OslpEnvelope oslpRequest;
     private OslpEnvelope oslpResponse;
 

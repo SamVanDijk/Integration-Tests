@@ -135,28 +135,44 @@ public class SetConfigurationDataSteps {
 
     @Autowired
     private DeviceRepository deviceRepositoryMock;
+
     @Autowired
     private SsldRepository ssldRepositoryMock;
+
     @Autowired
     private OrganisationRepository organisationRepositoryMock;
+
     @Autowired
     private DeviceAuthorizationRepository deviceAuthorizationRepositoryMock;
+
     @Autowired
     private DeviceFunctionMappingRepository deviceFunctionMappingRepositoryMock;
+
     @Autowired
     private DeviceLogItemRepository deviceLogItemRepositoryMock;
 
     // Protocol adapter fields
     @Autowired
+    @Qualifier("protocolOslpDeviceRegistrationService")
     private DeviceRegistrationService deviceRegistrationService;
+
     @Autowired
+    @Qualifier("protocolOslpOslpDeviceService")
     private OslpDeviceService oslpDeviceService;
+
+    @Qualifier("protocolOslpOslpDevice")
     private OslpDevice oslpDevice;
+
     @Autowired
+    @Qualifier("protocolOslpOslpDeviceRepository")
     private OslpDeviceRepository oslpDeviceRepositoryMock;
 
+    @Qualifier("protocolOslpOslpEnvelope")
     private OslpEnvelope oslpResponse;
+
+    @Qualifier("protocolOslpOslpChannelHandlerClient")
     private OslpChannelHandlerClient oslpChannelHandler;
+
     @Autowired
     private Channel channelMock;
 
@@ -323,7 +339,7 @@ public class SetConfigurationDataSteps {
         authorizations.add(new DeviceAuthorizationBuilder().withDevice(this.device).withOrganisation(this.organisation)
                 .withFunctionGroup(DeviceFunctionGroup.CONFIGURATION).build());
         when(this.deviceAuthorizationRepositoryMock.findByOrganisationAndDevice(this.organisation, this.device))
-                .thenReturn(authorizations);
+        .thenReturn(authorizations);
 
         final List<DeviceFunction> deviceFunctions = new ArrayList<>();
         deviceFunctions.add(DeviceFunction.SET_CONFIGURATION);

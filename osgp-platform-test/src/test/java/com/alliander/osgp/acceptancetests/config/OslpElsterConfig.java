@@ -45,8 +45,7 @@ public class OslpElsterConfig {
     private static final String OSLP_SECURITY_SIGNATURE = "";
     private static final String OSLP_SECURITY_PROVIDER = "";
 
-    @Bean(destroyMethod = "releaseExternalResources")
-    @QualifierProtocolOslpElster
+    @Bean(destroyMethod = "releaseExternalResources", name="protocolOslpElsterClientBootstrap")
     public ClientBootstrap clientBootstrap() {
         final ChannelFactory factory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
                 Executors.newCachedThreadPool());
@@ -54,7 +53,7 @@ public class OslpElsterConfig {
         final ChannelPipelineFactory pipelineFactory = new ChannelPipelineFactory() {
             @Override
             public ChannelPipeline getPipeline() throws InvalidKeySpecException, NoSuchAlgorithmException, IOException,
-                    NoSuchProviderException {
+            NoSuchProviderException {
                 final ChannelPipeline pipeline = Channels.pipeline();
 
                 pipeline.addLast("oslpEncoder", new OslpEncoder());
@@ -90,7 +89,7 @@ public class OslpElsterConfig {
         bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
             @Override
             public ChannelPipeline getPipeline() throws InvalidKeySpecException, NoSuchAlgorithmException, IOException,
-                    NoSuchProviderException {
+            NoSuchProviderException {
                 final ChannelPipeline pipeline = Channels.pipeline();
 
                 pipeline.addLast("oslpEncoder", new OslpEncoder());

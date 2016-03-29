@@ -40,7 +40,6 @@ import org.springframework.jms.core.JmsTemplate;
 import com.alliander.osgp.acceptancetests.OslpTestUtils;
 import com.alliander.osgp.acceptancetests.ProtocolInfoTestUtils;
 import com.alliander.osgp.adapter.domain.publiclighting.infra.jms.ws.WebServiceResponseMessageSender;
-import com.alliander.osgp.adapter.protocol.oslp.application.config.QualifierProtocolOslp;
 import com.alliander.osgp.adapter.protocol.oslp.application.services.DeviceRegistrationService;
 import com.alliander.osgp.adapter.protocol.oslp.domain.entities.OslpDevice;
 import com.alliander.osgp.adapter.protocol.oslp.domain.entities.OslpDeviceBuilder;
@@ -154,26 +153,28 @@ public class GetStatusSteps {
 
     // Protocol Adapter fields
     @Autowired
-    @QualifierProtocolOslp
+    @Qualifier("protocolOslpDeviceRegistrationService")
     private DeviceRegistrationService deviceRegistrationService;
+
     @Autowired
-    // @Qualifier("protocolOslpDeviceService")
-    @QualifierProtocolOslp
+    @Qualifier("protocolOslpDeviceService")
     private OslpDeviceService oslpDeviceService;
+
     private OslpDevice oslpDevice;
+
     @Autowired
-    @QualifierProtocolOslp
+    @Qualifier("protocolOslpOslpDeviceRepository")
     private OslpDeviceRepository oslpDeviceRepositoryMock;
 
     private OslpEnvelope oslpRequest;
     private OslpEnvelope oslpResponse;
+
     @Autowired
-    // @Qualifier("protocolOslpChannelHandlerClient")
-    @QualifierProtocolOslp
+    @Qualifier("protocolOslpChannelHandlerClient")
     private OslpChannelHandlerClient oslpChannelHandler;
+
     @Autowired
-    // @Qualifier("protocolOslpChannel")
-    @QualifierProtocolOslp
+    @Qualifier("protocolOslpChannel")
     private Channel channelMock;
 
     // Test fields
@@ -251,7 +252,7 @@ public class GetStatusSteps {
         authorizations.add(new DeviceAuthorizationBuilder().withDevice(this.device).withOrganisation(this.organisation)
                 .withFunctionGroup(DeviceFunctionGroup.AD_HOC).build());
         when(this.deviceAuthorizationRepositoryMock.findByOrganisationAndDevice(this.organisation, this.device))
-                .thenReturn(authorizations);
+        .thenReturn(authorizations);
 
         final List<DeviceFunction> deviceFunctions = new ArrayList<>();
         deviceFunctions.add(DeviceFunction.GET_STATUS);
@@ -295,12 +296,12 @@ public class GetStatusSteps {
                 .setPreferredLinktype(
                         StringUtils.isBlank(preferredLinkType) ? Oslp.LinkType.LINK_NOT_SET : Enum.valueOf(
                                 Oslp.LinkType.class, preferredLinkType))
-                .setActualLinktype(
-                        StringUtils.isBlank(actualLinkType) ? Oslp.LinkType.LINK_NOT_SET : Enum.valueOf(
-                                Oslp.LinkType.class, actualLinkType))
-                .setLightType(
-                        StringUtils.isBlank(lightType) ? Oslp.LightType.LT_NOT_SET : Enum.valueOf(Oslp.LightType.class,
-                                lightType)).setEventNotificationMask(mask).addValue(lightValueBuilder).build();
+                                .setActualLinktype(
+                                        StringUtils.isBlank(actualLinkType) ? Oslp.LinkType.LINK_NOT_SET : Enum.valueOf(
+                                                Oslp.LinkType.class, actualLinkType))
+                                                .setLightType(
+                                                        StringUtils.isBlank(lightType) ? Oslp.LightType.LT_NOT_SET : Enum.valueOf(Oslp.LightType.class,
+                                                                lightType)).setEventNotificationMask(mask).addValue(lightValueBuilder).build();
 
         this.oslpResponse = OslpTestUtils.createOslpEnvelopeBuilder().withDeviceId(Base64.decodeBase64(DEVICE_UID))
                 .withPayloadMessage(Message.newBuilder().setGetStatusResponse(getStatusResponse).build()).build();
@@ -704,10 +705,10 @@ public class GetStatusSteps {
                     if (StringUtils.isNotBlank(eventnotifications)) {
                         for (final String event : eventnotifications.split(",")) {
                             expectedEventNotificationTypes
-                                    .add(Enum
-                                            .valueOf(
-                                                    com.alliander.osgp.adapter.ws.schema.publiclighting.adhocmanagement.EventNotificationType.class,
-                                                    event));
+                            .add(Enum
+                                    .valueOf(
+                                            com.alliander.osgp.adapter.ws.schema.publiclighting.adhocmanagement.EventNotificationType.class,
+                                            event));
                         }
                     }
                     final HashSet<com.alliander.osgp.adapter.ws.schema.publiclighting.adhocmanagement.EventNotificationType> actualEventNotificationTypes = new HashSet<>(
