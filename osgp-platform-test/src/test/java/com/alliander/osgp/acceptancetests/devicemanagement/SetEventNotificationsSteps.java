@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -58,16 +59,19 @@ import com.alliander.osgp.adapter.ws.schema.core.devicemanagement.SetEventNotifi
 import com.alliander.osgp.adapter.ws.schema.core.devicemanagement.SetEventNotificationsAsyncResponse;
 import com.alliander.osgp.adapter.ws.schema.core.devicemanagement.SetEventNotificationsRequest;
 import com.alliander.osgp.adapter.ws.schema.core.devicemanagement.SetEventNotificationsResponse;
-import com.alliander.osgp.domain.core.entities.Device;
 import com.alliander.osgp.domain.core.entities.DeviceAuthorization;
 import com.alliander.osgp.domain.core.entities.DeviceAuthorizationBuilder;
 import com.alliander.osgp.domain.core.entities.DeviceBuilder;
 import com.alliander.osgp.domain.core.entities.Organisation;
 import com.alliander.osgp.domain.core.entities.OrganisationBuilder;
+import com.alliander.osgp.domain.core.entities.Ssld;
 import com.alliander.osgp.domain.core.exceptions.ValidationException;
 import com.alliander.osgp.domain.core.repositories.DeviceAuthorizationRepository;
+import com.alliander.osgp.domain.core.repositories.DeviceFunctionMappingRepository;
 import com.alliander.osgp.domain.core.repositories.DeviceRepository;
 import com.alliander.osgp.domain.core.repositories.OrganisationRepository;
+import com.alliander.osgp.domain.core.repositories.SsldRepository;
+import com.alliander.osgp.domain.core.valueobjects.DeviceFunction;
 import com.alliander.osgp.domain.core.valueobjects.DeviceFunctionGroup;
 import com.alliander.osgp.logging.domain.repositories.DeviceLogItemRepository;
 import com.alliander.osgp.oslp.Oslp.Message;
@@ -89,7 +93,6 @@ public class SetEventNotificationsSteps {
     private static final String ORGANISATION_ID_OWNER = "ORGANISATION-01";
     private static final String DEVICE_UID = "AAAAAAAAAAYAAAAA";
 
-    // TODO - Add as parameters to tests
     private static final Boolean PUBLIC_KEY_PRESENT = true;
     private static final String PROTOCOL = "OSLP";
     private static final String PROTOCOL_VERSION = "1.0";
@@ -105,6 +108,9 @@ public class SetEventNotificationsSteps {
     @Autowired
     @Qualifier("wsCoreDeviceManagementService")
     private DeviceManagementService deviceManagementService;
+    @Autowired
+    @Qualifier("coreDeviceManagementMapper")
+    private DeviceManagementMapper deviceManagementMapper;
 
     @Autowired
     @Qualifier("wsCoreIncomingResponsesMessageFinder")
@@ -119,16 +125,20 @@ public class SetEventNotificationsSteps {
     @Qualifier("domainCoreOutgoingWebServiceResponsesMessageSender")
     private WebServiceResponseMessageSender webServiceResponseMessageSenderMock;
 
-    private Device device;
+    private Ssld device;
     private Organisation organisation;
     private DeviceAuthorization authorization;
 
     @Autowired
     private DeviceRepository deviceRepositoryMock;
     @Autowired
+    private SsldRepository ssldRepositoryMock;
+    @Autowired
     private OrganisationRepository organisationRepositoryMock;
     @Autowired
     private DeviceAuthorizationRepository authorizationRepositoryMock;
+    @Autowired
+    private DeviceFunctionMappingRepository deviceFunctionMappingRepositoryMock;
     @Autowired
     private DeviceLogItemRepository logItemRepositoryMock;
 
@@ -178,6 +188,8 @@ public class SetEventNotificationsSteps {
         this.oslpDevice = this.createOslpDevice(device);
 
         when(this.deviceRepositoryMock.findByDeviceIdentification(device)).thenReturn(this.device);
+        when(this.ssldRepositoryMock.findByDeviceIdentification(device)).thenReturn(this.device);
+        when(this.ssldRepositoryMock.findOne(1L)).thenReturn(this.device);
         when(this.oslpDeviceRepositoryMock.findByDeviceIdentification(device)).thenReturn(this.oslpDevice);
         when(this.oslpDeviceRepositoryMock.findByDeviceUid(DEVICE_UID)).thenReturn(this.oslpDevice);
 
@@ -206,6 +218,12 @@ public class SetEventNotificationsSteps {
                 this.organisation);
         when(this.authorizationRepositoryMock.findByOrganisationAndDevice(this.organisation, this.device)).thenReturn(
                 Arrays.asList(this.authorization));
+
+        final List<DeviceFunction> deviceFunctions = new ArrayList<>();
+        deviceFunctions.add(DeviceFunction.SET_EVENT_NOTIFICATIONS);
+
+        when(this.deviceFunctionMappingRepositoryMock.findByDeviceFunctionGroups(any(ArrayList.class))).thenReturn(
+                deviceFunctions);
     }
 
     // === WHEN ===
@@ -232,7 +250,6 @@ public class SetEventNotificationsSteps {
                 "THEN: \"the set event notifications request should return a set event notifications response with a correlationId and deviceId {}\".",
                 deviceId);
 
-        // TODO Add check on device id
         try {
             Assert.assertNotNull("Set Event Notifications Async Response should not be null",
                     this.setEventNotificationsAsyncResponse);
@@ -303,7 +320,6 @@ public class SetEventNotificationsSteps {
 
         try {
             verify(this.channelMock, timeout(1000).times(1)).write(any(OslpEnvelope.class));
-            // TODO: Verify content of the OslpEnvelope message
         } catch (final Throwable t) {
             LOGGER.error("Exception [{}]: {}", t.getClass().getSimpleName(), t.getMessage());
             return false;
@@ -379,7 +395,7 @@ public class SetEventNotificationsSteps {
                 when(messageMock.getStringProperty("OrganisationIdentification")).thenReturn(ORGANISATION_ID_OWNER);
                 when(messageMock.getStringProperty("DeviceIdentification")).thenReturn(deviceId);
                 final ResponseMessageResultType result = ResponseMessageResultType.valueOf(qresult);
-                Object dataObject = null;
+                Serializable dataObject = null;
                 OsgpException exception = null;
                 if (result.equals(ResponseMessageResultType.NOT_OK)) {
                     dataObject = new FunctionalException(FunctionalExceptionType.VALIDATION_ERROR,
@@ -437,8 +453,6 @@ public class SetEventNotificationsSteps {
 
                 Assert.assertTrue("Invalid result, found: " + actualResult + " , expected: " + expectedResult,
                         (actualResult == null && expectedResult == null) || actualResult.equals(expectedResult));
-
-                // TODO: check description
             }
         } catch (final Throwable t) {
             LOGGER.error("Exception [{}]: {}", t.getClass().getSimpleName(), t.getMessage());
@@ -450,15 +464,15 @@ public class SetEventNotificationsSteps {
     // === private methods ===
 
     private void setUp() {
-        Mockito.reset(new Object[] { this.deviceRepositoryMock, this.organisationRepositoryMock,
-                this.logItemRepositoryMock, this.authorizationRepositoryMock, this.channelMock,
-                this.webServiceResponseMessageSenderMock, this.oslpDeviceRepositoryMock });
+        Mockito.reset(new Object[] { this.deviceRepositoryMock, this.ssldRepositoryMock,
+                this.organisationRepositoryMock, this.logItemRepositoryMock, this.authorizationRepositoryMock,
+                this.channelMock, this.webServiceResponseMessageSenderMock, this.oslpDeviceRepositoryMock });
 
         this.oslpDeviceService.setMapper(new OslpMapper());
         OslpTestUtils.configureDeviceServiceForOslp(this.oslpDeviceService);
 
         this.deviceManagementEndpoint = new DeviceManagementEndpoint(this.deviceManagementService,
-                new DeviceManagementMapper());
+                this.deviceManagementMapper);
         this.deviceRegistrationService.setSequenceNumberMaximum(OslpTestUtils.OSLP_SEQUENCE_NUMBER_MAXIMUM);
         this.deviceRegistrationService.setSequenceNumberWindow(OslpTestUtils.OSLP_SEQUENCE_NUMBER_WINDOW);
 
@@ -470,8 +484,8 @@ public class SetEventNotificationsSteps {
         this.throwable = null;
     }
 
-    private Device createDevice(final String deviceIdentification) {
-        return new DeviceBuilder().withDeviceIdentification(deviceIdentification)
+    private Ssld createDevice(final String deviceIdentification) {
+        return (Ssld) new DeviceBuilder().withDeviceIdentification(deviceIdentification)
                 .withNetworkAddress(InetAddress.getLoopbackAddress()).withPublicKeyPresent(PUBLIC_KEY_PRESENT)
                 .withProtocolInfo(ProtocolInfoTestUtils.getProtocolInfo(PROTOCOL, PROTOCOL_VERSION)).isActivated(true)
                 .build();

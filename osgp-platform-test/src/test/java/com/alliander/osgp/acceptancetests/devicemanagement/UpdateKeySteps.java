@@ -40,8 +40,10 @@ import com.alliander.osgp.domain.core.entities.DeviceAuthorizationBuilder;
 import com.alliander.osgp.domain.core.entities.DeviceBuilder;
 import com.alliander.osgp.domain.core.entities.Organisation;
 import com.alliander.osgp.domain.core.repositories.DeviceAuthorizationRepository;
+import com.alliander.osgp.domain.core.repositories.DeviceFunctionMappingRepository;
 import com.alliander.osgp.domain.core.repositories.DeviceRepository;
 import com.alliander.osgp.domain.core.repositories.OrganisationRepository;
+import com.alliander.osgp.domain.core.valueobjects.DeviceFunction;
 import com.alliander.osgp.domain.core.valueobjects.DeviceFunctionGroup;
 import com.alliander.osgp.domain.core.valueobjects.PlatformFunctionGroup;
 
@@ -54,8 +56,6 @@ public class UpdateKeySteps {
     private static final String ORGANISATION_ID = "ORGANISATION-01";
     private static final String ORGANISATION_PREFIX = "ORG";
 
-    // TODO - Add as parameters to tests
-    private static final Boolean PUBLIC_KEY_PRESENT = true;
     private static final String PROTOCOL = "OSLP";
     private static final String PROTOCOL_VERSION = "1.0";
 
@@ -75,6 +75,8 @@ public class UpdateKeySteps {
     private Organisation organisation;
     @Autowired
     private DeviceAuthorizationRepository deviceAuthorizationRepositoryMock;
+    @Autowired
+    private DeviceFunctionMappingRepository deviceFunctionMappingRepositoryMock;
     // Protocol fields
     @Autowired
     private OslpDeviceRepository oslpDeviceRepositoryMock;
@@ -93,7 +95,6 @@ public class UpdateKeySteps {
         this.throwable = null;
         this.request = null;
         this.response = null;
-
     }
 
     // === GIVEN ===
@@ -130,9 +131,9 @@ public class UpdateKeySteps {
                 .withProtocolInfo(ProtocolInfoTestUtils.getProtocolInfo(PROTOCOL, PROTOCOL_VERSION)).build();
         this.oslpDevice = new OslpDeviceBuilder().withDeviceIdentification(device).build();
 
-        when(this.deviceRepositoryMock.findByDeviceIdentification(device)).thenReturn(null, this.device);
+        when(this.deviceRepositoryMock.findByDeviceIdentification(device)).thenReturn(this.device);
         when(this.oslpDeviceRepositoryMock.save(any(OslpDevice.class))).thenReturn(this.oslpDevice);
-        when(this.oslpDeviceRepositoryMock.findByDeviceIdentification(device)).thenReturn(null, this.oslpDevice);
+        when(this.oslpDeviceRepositoryMock.findByDeviceIdentification(device)).thenReturn(this.oslpDevice);
     }
 
     @DomainStep("the update key request refers to an existing organisation that is authorized")
@@ -150,6 +151,11 @@ public class UpdateKeySteps {
         when(this.deviceAuthorizationRepositoryMock.findByOrganisationAndDevice(this.organisation, this.device))
                 .thenReturn(authorizations);
 
+        final List<DeviceFunction> deviceFunctions = new ArrayList<>();
+        deviceFunctions.add(DeviceFunction.UPDATE_KEY);
+
+        when(this.deviceFunctionMappingRepositoryMock.findByDeviceFunctionGroups(any(ArrayList.class))).thenReturn(
+                deviceFunctions);
     }
 
     // === WHEN ===
@@ -160,9 +166,6 @@ public class UpdateKeySteps {
 
         try {
             this.response = this.deviceManagementEndpoint.updateKey(ORGANISATION_ID, this.request);
-
-            Thread.sleep(1000);
-
         } catch (final Throwable t) {
             LOGGER.error("Exception [{}]: {}", t.getClass().getSimpleName(), t.getMessage());
             this.throwable = t;
@@ -199,7 +202,7 @@ public class UpdateKeySteps {
         try {
             final ArgumentCaptor<OslpDevice> argument = ArgumentCaptor.forClass(OslpDevice.class);
 
-            verify(this.oslpDeviceRepositoryMock, timeout(10000).times(2)).save(argument.capture());
+            verify(this.oslpDeviceRepositoryMock, timeout(10000).times(1)).save(argument.capture());
 
             Assert.assertEquals("Device identifications should match", device, argument.getValue()
                     .getDeviceIdentification());
@@ -218,7 +221,7 @@ public class UpdateKeySteps {
         LOGGER.info("THEN: \"the device {} should not be updated with the invalid key {}\".", device, key);
 
         try {
-            verify(this.deviceRepositoryMock, timeout(10000).times(0)).save(any(Device.class));
+            verify(this.oslpDeviceRepositoryMock, timeout(10000).times(0)).save(any(OslpDevice.class));
         } catch (final Throwable t) {
             LOGGER.error("Exception [{}]: {}", t.getClass().getSimpleName(), t.getMessage());
             return false;

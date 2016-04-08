@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -48,6 +49,7 @@ import com.alliander.osgp.adapter.protocol.oslp.domain.repositories.OslpDeviceRe
 import com.alliander.osgp.adapter.protocol.oslp.infra.messaging.processors.CommonUpdateFirmwareRequestMessageProcessor;
 import com.alliander.osgp.adapter.protocol.oslp.infra.networking.OslpChannelHandlerClient;
 import com.alliander.osgp.adapter.protocol.oslp.infra.networking.OslpDeviceService;
+import com.alliander.osgp.adapter.ws.core.application.mapping.FirmwareManagementMapper;
 import com.alliander.osgp.adapter.ws.core.application.services.FirmwareManagementService;
 import com.alliander.osgp.adapter.ws.core.endpoints.FirmwareManagementEndpoint;
 import com.alliander.osgp.adapter.ws.core.infra.jms.CommonResponseMessageFinder;
@@ -63,8 +65,10 @@ import com.alliander.osgp.domain.core.entities.DeviceBuilder;
 import com.alliander.osgp.domain.core.entities.Organisation;
 import com.alliander.osgp.domain.core.exceptions.ValidationException;
 import com.alliander.osgp.domain.core.repositories.DeviceAuthorizationRepository;
+import com.alliander.osgp.domain.core.repositories.DeviceFunctionMappingRepository;
 import com.alliander.osgp.domain.core.repositories.DeviceRepository;
 import com.alliander.osgp.domain.core.repositories.OrganisationRepository;
+import com.alliander.osgp.domain.core.valueobjects.DeviceFunction;
 import com.alliander.osgp.domain.core.valueobjects.DeviceFunctionGroup;
 import com.alliander.osgp.domain.core.valueobjects.PlatformFunctionGroup;
 import com.alliander.osgp.logging.domain.repositories.DeviceLogItemRepository;
@@ -88,7 +92,6 @@ public class UpdateFirmwareSteps {
     private static final String ORGANISATION_PREFIX = "ORG";
     private static final String DEVICE_UID = "AAAAAAAAAAYAAAAA";
 
-    // TODO - Add as parameters to tests
     private static final Boolean PUBLIC_KEY_PRESENT = true;
     private static final String PROTOCOL = "OSLP";
     private static final String PROTOCOL_VERSION = "1.0";
@@ -120,6 +123,8 @@ public class UpdateFirmwareSteps {
     private OrganisationRepository organisationRepositoryMock;
     @Autowired
     private DeviceAuthorizationRepository deviceAuthorizationRepositoryMock;
+    @Autowired
+    private DeviceFunctionMappingRepository deviceFunctionMappingRepositoryMock;
     @Autowired
     private DeviceRepository deviceRepositoryMock;
     @Autowired
@@ -182,7 +187,6 @@ public class UpdateFirmwareSteps {
             final FirmwareLocation firmwareLocation = new FirmwareLocation(firmwareDomainConfig, firmwarePathConfig,
                     firmwareExtensionConfig);
             this.messageProcessor.setFirmwareLocation(firmwareLocation);
-            // this.oslpFirmwareManagementService.setFirmwareLocation(firmwareLocation);
         } catch (final IllegalArgumentException e) {
             // this.firmwareLocation = null;
             // Silencing the IllegalArgumentException thrown by the
@@ -229,16 +233,13 @@ public class UpdateFirmwareSteps {
                 .withFunctionGroup(DeviceFunctionGroup.FIRMWARE).build());
         when(this.deviceAuthorizationRepositoryMock.findByOrganisationAndDevice(this.organisation, this.device))
         .thenReturn(authorizations);
-    }
 
-    // @DomainStep("a received firmware update request for device (.*) with (.*)")
-    // public void givenAReceivedFirmwareUpdateRequestWith(final String
-    // deviceIdentification, final String firmwareName) {
-    // LOGGER.info("[Given a received firmware update request for device {} with [{}]",
-    // firmwareName);
-    // this.request.setDeviceIdentification(deviceIdentification);
-    // this.request.setFirmwareIdentification(firmwareName);
-    // }
+        final List<DeviceFunction> deviceFunctions = new ArrayList<>();
+        deviceFunctions.add(DeviceFunction.UPDATE_FIRMWARE);
+
+        when(this.deviceFunctionMappingRepositoryMock.findByDeviceFunctionGroups(any(ArrayList.class))).thenReturn(
+                deviceFunctions);
+    }
 
     @DomainStep("the update firmware request is received")
     public void whenTheUpdateFirmwareRequestIsReceived() throws Exception {
@@ -258,7 +259,7 @@ public class UpdateFirmwareSteps {
         LOGGER.info(
                 "THEN: the update firmware request should return an async response with a correlationId and deviceId {}",
                 device);
-        // TODO Add check on device id
+
         try {
             Assert.assertNotNull("asyncResponse should not be null", this.updateFirmwareAsyncResponse);
             Assert.assertNotNull("CorrelationId should not be null", this.updateFirmwareAsyncResponse
@@ -365,7 +366,7 @@ public class UpdateFirmwareSteps {
                 when(messageMock.getStringProperty("OrganisationIdentification")).thenReturn(ORGANISATION_ID);
                 when(messageMock.getStringProperty("DeviceIdentification")).thenReturn(deviceId);
                 final ResponseMessageResultType result = ResponseMessageResultType.valueOf(qresult);
-                Object dataObject = null;
+                Serializable dataObject = null;
                 OsgpException exception = null;
                 if (result.equals(ResponseMessageResultType.NOT_OK)) {
                     dataObject = new FunctionalException(FunctionalExceptionType.VALIDATION_ERROR,
@@ -376,8 +377,7 @@ public class UpdateFirmwareSteps {
                         exception, dataObject);
                 when(messageMock.getObject()).thenReturn(message);
             } catch (final JMSException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                LOGGER.error("JMSException", e);
             }
 
             when(this.commonResponsesJmsTemplate.receiveSelected(any(String.class))).thenReturn(messageMock);
@@ -434,7 +434,8 @@ public class UpdateFirmwareSteps {
                 this.deviceAuthorizationRepositoryMock, this.deviceLogItemRepositoryMock, this.channelMock,
                 this.webServiceResponseMessageSenderMock, this.oslpDeviceRepositoryMock });
 
-        this.firmwareManagementEndpoint = new FirmwareManagementEndpoint(this.wsFirmwareManagementService);
+        this.firmwareManagementEndpoint = new FirmwareManagementEndpoint(this.wsFirmwareManagementService,
+                new FirmwareManagementMapper());
         this.deviceRegistrationService.setSequenceNumberMaximum(OslpTestUtils.OSLP_SEQUENCE_NUMBER_MAXIMUM);
         this.deviceRegistrationService.setSequenceNumberWindow(OslpTestUtils.OSLP_SEQUENCE_NUMBER_WINDOW);
 
@@ -461,5 +462,4 @@ public class UpdateFirmwareSteps {
         this.oslpDevice = new OslpDeviceBuilder().withDeviceIdentification(deviceIdentification)
                 .withDeviceUid(DEVICE_UID).build();
     }
-
 }

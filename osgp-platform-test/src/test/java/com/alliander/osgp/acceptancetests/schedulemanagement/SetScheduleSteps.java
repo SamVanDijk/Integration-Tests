@@ -13,6 +13,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,15 +61,18 @@ import com.alliander.osgp.adapter.ws.schema.publiclighting.schedulemanagement.Se
 import com.alliander.osgp.adapter.ws.schema.publiclighting.schedulemanagement.TriggerType;
 import com.alliander.osgp.adapter.ws.schema.publiclighting.schedulemanagement.WeekDayType;
 import com.alliander.osgp.adapter.ws.schema.publiclighting.schedulemanagement.WindowType;
-import com.alliander.osgp.domain.core.entities.Device;
 import com.alliander.osgp.domain.core.entities.DeviceAuthorization;
 import com.alliander.osgp.domain.core.entities.DeviceAuthorizationBuilder;
 import com.alliander.osgp.domain.core.entities.DeviceBuilder;
 import com.alliander.osgp.domain.core.entities.Organisation;
+import com.alliander.osgp.domain.core.entities.Ssld;
 import com.alliander.osgp.domain.core.exceptions.ValidationException;
 import com.alliander.osgp.domain.core.repositories.DeviceAuthorizationRepository;
+import com.alliander.osgp.domain.core.repositories.DeviceFunctionMappingRepository;
 import com.alliander.osgp.domain.core.repositories.DeviceRepository;
 import com.alliander.osgp.domain.core.repositories.OrganisationRepository;
+import com.alliander.osgp.domain.core.repositories.SsldRepository;
+import com.alliander.osgp.domain.core.valueobjects.DeviceFunction;
 import com.alliander.osgp.domain.core.valueobjects.DeviceFunctionGroup;
 import com.alliander.osgp.domain.core.valueobjects.PlatformFunctionGroup;
 import com.alliander.osgp.logging.domain.repositories.DeviceLogItemRepository;
@@ -92,7 +96,6 @@ public class SetScheduleSteps {
     private static final String ORGANISATION_ID = "ORGANISATION-01";
     private static final String ORGANISATION_PREFIX = "ORG";
 
-    // TODO - Add as parameters to tests
     private static final Boolean PUBLIC_KEY_PRESENT = true;
     private static final String PROTOCOL = "OSLP";
     private static final String PROTOCOL_VERSION = "1.0";
@@ -123,13 +126,17 @@ public class SetScheduleSteps {
     @Qualifier("domainPublicLightingOutgoingWebServiceResponseMessageSender")
     private WebServiceResponseMessageSender webServiceResponseMessageSenderMock;
 
-    private Device device;
+    private Ssld device;
     private Organisation organisation;
 
     @Autowired
     private DeviceRepository deviceRepositoryMock;
     @Autowired
+    private SsldRepository ssldRepositoryMock;
+    @Autowired
     private DeviceAuthorizationRepository deviceAuthorizationRepositoryMock;
+    @Autowired
+    private DeviceFunctionMappingRepository deviceFunctionMappingRepositoryMock;
     @Autowired
     private OrganisationRepository organisationRepositoryMock;
     @Autowired
@@ -193,6 +200,8 @@ public class SetScheduleSteps {
         case "ACTIVE":
             this.createDevice(deviceIdentification, true);
             when(this.deviceRepositoryMock.findByDeviceIdentification(deviceIdentification)).thenReturn(this.device);
+            when(this.ssldRepositoryMock.findByDeviceIdentification(deviceIdentification)).thenReturn(this.device);
+            when(this.ssldRepositoryMock.findOne(1L)).thenReturn(this.device);
             when(this.oslpDeviceRepositoryMock.findByDeviceIdentification(deviceIdentification)).thenReturn(
                     this.oslpDevice);
             when(this.oslpDeviceRepositoryMock.findByDeviceUid(DEVICE_UID)).thenReturn(this.oslpDevice);
@@ -213,10 +222,14 @@ public class SetScheduleSteps {
             break;
         case "UNKNOWN":
             when(this.deviceRepositoryMock.findByDeviceIdentification(deviceIdentification)).thenReturn(null);
+            when(this.ssldRepositoryMock.findByDeviceIdentification(deviceIdentification)).thenReturn(null);
+            when(this.ssldRepositoryMock.findOne(1L)).thenReturn(null);
             break;
         case "UNREGISTERED":
             this.createDevice(deviceIdentification, false);
             when(this.deviceRepositoryMock.findByDeviceIdentification(deviceIdentification)).thenReturn(this.device);
+            when(this.ssldRepositoryMock.findByDeviceIdentification(deviceIdentification)).thenReturn(this.device);
+            when(this.ssldRepositoryMock.findOne(1L)).thenReturn(this.device);
             break;
         default:
             throw new Exception("Unknown device status");
@@ -238,6 +251,11 @@ public class SetScheduleSteps {
         when(this.deviceAuthorizationRepositoryMock.findByOrganisationAndDevice(this.organisation, this.device))
         .thenReturn(authorizations);
 
+        final List<DeviceFunction> deviceFunctions = new ArrayList<>();
+        deviceFunctions.add(DeviceFunction.SET_LIGHT_SCHEDULE);
+
+        when(this.deviceFunctionMappingRepositoryMock.findByDeviceFunctionGroups(any(ArrayList.class))).thenReturn(
+                deviceFunctions);
     }
 
     @DomainStep("a get set schedule response request with correlationId (.*) and deviceId (.*)")
@@ -272,7 +290,7 @@ public class SetScheduleSteps {
                 when(messageMock.getStringProperty("DeviceIdentification")).thenReturn(deviceId);
 
                 final ResponseMessageResultType result = ResponseMessageResultType.valueOf(qresult);
-                Object dataObject = null;
+                Serializable dataObject = null;
                 OsgpException exception = null;
                 if (result.equals(ResponseMessageResultType.NOT_OK)) {
                     dataObject = new FunctionalException(FunctionalExceptionType.VALIDATION_ERROR, null,
@@ -330,7 +348,6 @@ public class SetScheduleSteps {
                 "THEN: \"the set schedule request should return a async response with a correlationId and deviceId {}\".",
                 deviceId);
 
-        // TODO Add check on device id
         try {
             Assert.assertNotNull("Set Schedule Async Response should not be null", this.setScheduleAsyncResponse);
             Assert.assertNotNull("Async Response should not be null", this.setScheduleAsyncResponse.getAsyncResponse());
@@ -431,8 +448,6 @@ public class SetScheduleSteps {
 
                 Assert.assertTrue("Invalid result, found: " + actualResult + " , expected: " + expectedResult,
                         (actualResult == null && expectedResult == null) || actualResult.equals(expectedResult));
-
-                // TODO: check description
             }
         } catch (final Throwable t) {
             LOGGER.error("Exception [{}]: {}", t.getClass().getSimpleName(), t.getMessage());
@@ -444,9 +459,9 @@ public class SetScheduleSteps {
     // === private methods ===
 
     private void setUp() {
-        Mockito.reset(new Object[] { this.deviceRepositoryMock, this.organisationRepositoryMock,
-                this.logItemRepositoryMock, this.channelMock, this.webServiceResponseMessageSenderMock,
-                this.oslpDeviceRepositoryMock });
+        Mockito.reset(new Object[] { this.deviceRepositoryMock, this.ssldRepositoryMock,
+                this.organisationRepositoryMock, this.logItemRepositoryMock, this.channelMock,
+                this.webServiceResponseMessageSenderMock, this.oslpDeviceRepositoryMock });
 
         this.scheduleManagementEndpoint = new PublicLightingScheduleManagementEndpoint(this.scheduleManagementService,
                 new ScheduleManagementMapper());
@@ -513,7 +528,7 @@ public class SetScheduleSteps {
     private void createDevice(final String deviceIdentification, final Boolean activated) {
         LOGGER.info("Creating device [{}] with active [{}]", deviceIdentification, activated);
 
-        this.device = new DeviceBuilder().withDeviceIdentification(deviceIdentification)
+        this.device = (Ssld) new DeviceBuilder().withDeviceIdentification(deviceIdentification)
                 .withNetworkAddress(activated ? InetAddress.getLoopbackAddress() : null)
                 .withPublicKeyPresent(PUBLIC_KEY_PRESENT)
                 .withProtocolInfo(ProtocolInfoTestUtils.getProtocolInfo(PROTOCOL, PROTOCOL_VERSION))

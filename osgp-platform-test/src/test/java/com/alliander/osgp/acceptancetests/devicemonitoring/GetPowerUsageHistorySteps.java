@@ -67,8 +67,10 @@ import com.alliander.osgp.domain.core.entities.DeviceAuthorizationBuilder;
 import com.alliander.osgp.domain.core.entities.DeviceBuilder;
 import com.alliander.osgp.domain.core.entities.Organisation;
 import com.alliander.osgp.domain.core.repositories.DeviceAuthorizationRepository;
+import com.alliander.osgp.domain.core.repositories.DeviceFunctionMappingRepository;
 import com.alliander.osgp.domain.core.repositories.DeviceRepository;
 import com.alliander.osgp.domain.core.repositories.OrganisationRepository;
+import com.alliander.osgp.domain.core.valueobjects.DeviceFunction;
 import com.alliander.osgp.domain.core.valueobjects.DeviceFunctionGroup;
 import com.alliander.osgp.domain.core.valueobjects.MeterType;
 import com.alliander.osgp.domain.core.valueobjects.PlatformFunctionGroup;
@@ -94,7 +96,6 @@ public class GetPowerUsageHistorySteps {
     private static final String ORGANISATION_PREFIX = "ORG";
     private static final String DEVICE_UID = "AAAAAAAAAAYAAAAA";
 
-    // TODO - Add as parameters to tests
     private static final Boolean PUBLIC_KEY_PRESENT = true;
     private static final String PROTOCOL = "OSLP";
     private static final String PROTOCOL_VERSION = "1.0";
@@ -133,6 +134,8 @@ public class GetPowerUsageHistorySteps {
     private OrganisationRepository organisationRepositoryMock;
     @Autowired
     private DeviceAuthorizationRepository deviceAuthorizationRepositoryMock;
+    @Autowired
+    private DeviceFunctionMappingRepository deviceFunctionMappingRepositoryMock;
     @Autowired
     private DeviceLogItemRepository deviceLogItemRepositoryMock;
 
@@ -175,7 +178,7 @@ public class GetPowerUsageHistorySteps {
             throw new Exception("Invalid date");
         }
 
-        // TODO: params for page and historyTerm
+        // implement parameters for page and historyTermType
         this.request.setHistoryTermType(HistoryTermType.SHORT);
         this.request.setTimePeriod(timePeriod);
     }
@@ -218,6 +221,12 @@ public class GetPowerUsageHistorySteps {
                 .withFunctionGroup(DeviceFunctionGroup.MONITORING).build());
         when(this.deviceAuthorizationRepositoryMock.findByOrganisationAndDevice(this.organisation, this.device))
         .thenReturn(authorizations);
+
+        final List<DeviceFunction> deviceFunctions = new ArrayList<>();
+        deviceFunctions.add(DeviceFunction.GET_POWER_USAGE_HISTORY);
+
+        when(this.deviceFunctionMappingRepositoryMock.findByDeviceFunctionGroups(any(ArrayList.class))).thenReturn(
+                deviceFunctions);
     }
 
     @DomainStep("the get power usage history oslp message from the device contains (.*), (.*), (.*), (.*), (.*), (.*), (.*), (.*), (.*), (.*), (.*), (.*), (.*), (.*), (.*), (.*), (.*), (.*) and (.*)")
@@ -535,7 +544,7 @@ public class GetPowerUsageHistorySteps {
                 when(messageMock.getObject()).thenReturn(message);
 
             } catch (final JMSException e) {
-                e.printStackTrace();
+                LOGGER.error("JMSException", e);
             }
 
             when(this.publicLightingResponsesJmsTemplate.receiveSelected(any(String.class))).thenReturn(messageMock);

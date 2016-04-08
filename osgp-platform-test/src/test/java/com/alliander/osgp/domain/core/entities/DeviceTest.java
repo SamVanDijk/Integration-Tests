@@ -25,6 +25,7 @@ import com.alliander.osgp.oslp.Oslp.DeviceType;
 public class DeviceTest {
 
     private static final String DEVICE_ID = "DEVICE-01";
+    private static final String OTHER_DEVICE_ID = "DEVICE-02";
 
     @Test
     public void createNewDevice() throws ValidationException, ArgumentNullOrEmptyException {
@@ -33,7 +34,6 @@ public class DeviceTest {
         assertThat(subject.getDeviceIdentification(), equalTo("DEV001"));
     }
 
-    //@Test
     public void updateRegistrationData() throws UnknownHostException, ValidationException, ArgumentNullOrEmptyException {
         final String deviceIdentification = "DEV002";
         final InetAddress address = InetAddress.getByName("127.0.0.1");
@@ -50,7 +50,6 @@ public class DeviceTest {
         assertThat(subject, equalTo(device));
     }
 
-    //@Test
     public void confirmRegistrationTest() throws UnknownHostException, PlatformException {
         // Set up the device and perform the registration step.
         final String deviceIdentification = "DEV002";
@@ -81,8 +80,8 @@ public class DeviceTest {
                 .withNetworkAddress(InetAddress.getLoopbackAddress()).isActivated(false).hasSchedule(true)
                 .ofDeviceType(DeviceType.SSLD.toString()).build();
 
-        Device expectedDevice = new DeviceBuilder().withDeviceIdentification(DEVICE_ID)
-                .withNetworkAddress(InetAddress.getLoopbackAddress()).isActivated(true).hasSchedule(true)
+        Device expectedDevice = new DeviceBuilder().withDeviceIdentification(OTHER_DEVICE_ID)
+                .withNetworkAddress(InetAddress.getLoopbackAddress()).isActivated(false).hasSchedule(true)
                 .ofDeviceType(DeviceType.SSLD.toString()).build();
 
         assertFalse(device.equals(expectedDevice));
@@ -90,7 +89,7 @@ public class DeviceTest {
         device = new DeviceBuilder().withDeviceIdentification(DEVICE_ID)
                 .withNetworkAddress(InetAddress.getLoopbackAddress()).isActivated(false).build();
 
-        expectedDevice = new DeviceBuilder().withDeviceIdentification(DEVICE_ID)
+        expectedDevice = new DeviceBuilder().withDeviceIdentification(OTHER_DEVICE_ID)
                 .withNetworkAddress(InetAddress.getLoopbackAddress()).isActivated(false)
                 .ofDeviceType(DeviceType.SSLD.toString()).build();
 

@@ -9,10 +9,11 @@ package com.alliander.osgp.acceptancetests.adhocmanagement;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -64,8 +65,10 @@ import com.alliander.osgp.domain.core.entities.DeviceBuilder;
 import com.alliander.osgp.domain.core.entities.Organisation;
 import com.alliander.osgp.domain.core.exceptions.ValidationException;
 import com.alliander.osgp.domain.core.repositories.DeviceAuthorizationRepository;
+import com.alliander.osgp.domain.core.repositories.DeviceFunctionMappingRepository;
 import com.alliander.osgp.domain.core.repositories.DeviceRepository;
 import com.alliander.osgp.domain.core.repositories.OrganisationRepository;
+import com.alliander.osgp.domain.core.valueobjects.DeviceFunction;
 import com.alliander.osgp.domain.core.valueobjects.DeviceFunctionGroup;
 import com.alliander.osgp.domain.core.valueobjects.PlatformFunctionGroup;
 import com.alliander.osgp.logging.domain.repositories.DeviceLogItemRepository;
@@ -129,6 +132,8 @@ public class SetTransitionSteps {
     private OrganisationRepository organisationRepositoryMock;
     @Autowired
     private DeviceAuthorizationRepository deviceAuthorizationRepositoryMock;
+    @Autowired
+    private DeviceFunctionMappingRepository deviceFunctionMappingRepositoryMock;
     @Autowired
     private DeviceLogItemRepository deviceLogItemRepositoryMock;
 
@@ -208,6 +213,12 @@ public class SetTransitionSteps {
                 .withFunctionGroup(DeviceFunctionGroup.AD_HOC).build());
         when(this.deviceAuthorizationRepositoryMock.findByOrganisationAndDevice(this.organisation, this.device))
                 .thenReturn(authorizations);
+
+        final List<DeviceFunction> deviceFunctions = new ArrayList<>();
+        deviceFunctions.add(DeviceFunction.SET_TRANSITION);
+
+        when(this.deviceFunctionMappingRepositoryMock.findByDeviceFunctionGroups(any(ArrayList.class))).thenReturn(
+                deviceFunctions);
     }
 
     // === WHEN ===
@@ -217,12 +228,6 @@ public class SetTransitionSteps {
 
         try {
             this.setTransitionAsyncResponse = this.adHocManagementEndpoint.setTransition(ORGANISATION_ID, this.request);
-
-            // Add sleep to enable queue processing
-            for (int i = 0; i < 1000; i++) {
-                Thread.sleep(1);
-            }
-
         } catch (final Throwable t) {
             LOGGER.error("Exception [{}]: {}", t.getClass().getSimpleName(), t.getMessage());
             this.throwable = t;
@@ -237,7 +242,6 @@ public class SetTransitionSteps {
                 "THEN: \"the set transition request should return a set transition response with a correlationId and deviceId {}\".",
                 deviceId);
 
-        // TODO Add check on device id
         try {
             Assert.assertNotNull("Set Transition Async Response should not be null", this.setTransitionAsyncResponse);
             Assert.assertNotNull("Async Response should not be null",
@@ -261,7 +265,7 @@ public class SetTransitionSteps {
 
         try {
             final ArgumentCaptor<OslpEnvelope> argument = ArgumentCaptor.forClass(OslpEnvelope.class);
-            verify(this.channelMock, times(count)).write(argument.capture());
+            verify(this.channelMock, timeout(10000).times(count)).write(argument.capture());
 
             if (isMessageSent) {
                 this.oslpRequest = argument.getValue();
@@ -285,7 +289,7 @@ public class SetTransitionSteps {
 
         try {
             final ArgumentCaptor<ResponseMessage> argument = ArgumentCaptor.forClass(ResponseMessage.class);
-            verify(this.webServiceResponseMessageSenderMock, times(1)).send(argument.capture());
+            verify(this.webServiceResponseMessageSenderMock, timeout(10000).times(1)).send(argument.capture());
 
             final String expected = result.equals("NULL") ? null : result;
             final String actual = argument.getValue().getResult().getValue();
@@ -307,7 +311,7 @@ public class SetTransitionSteps {
 
         try {
             final ArgumentCaptor<OslpEnvelope> argument = ArgumentCaptor.forClass(OslpEnvelope.class);
-            verify(this.channelMock, times(count)).write(argument.capture());
+            verify(this.channelMock, timeout(10000).times(count)).write(argument.capture());
 
             if (isMessageSent) {
                 this.oslpRequest = argument.getValue();
@@ -378,7 +382,7 @@ public class SetTransitionSteps {
                 when(messageMock.getStringProperty("OrganisationIdentification")).thenReturn(ORGANISATION_ID);
                 when(messageMock.getStringProperty("DeviceIdentification")).thenReturn(deviceId);
                 final ResponseMessageResultType result = ResponseMessageResultType.valueOf(qresult);
-                Object dataObject = null;
+                Serializable dataObject = null;
                 OsgpException exception = null;
                 if (result.equals(ResponseMessageResultType.NOT_OK)) {
                     dataObject = new FunctionalException(FunctionalExceptionType.VALIDATION_ERROR,
@@ -389,8 +393,7 @@ public class SetTransitionSteps {
                         exception, dataObject);
                 when(messageMock.getObject()).thenReturn(message);
             } catch (final JMSException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                LOGGER.error("JMSException", e);
             }
 
             when(this.publicLightingResponsesJmsTemplate.receiveSelected(any(String.class))).thenReturn(messageMock);
@@ -405,7 +408,6 @@ public class SetTransitionSteps {
         LOGGER.info("WHEN: \"the set transition request is received\".");
 
         try {
-
             this.response = this.adHocManagementEndpoint.getSetTransitionResponse(ORGANISATION_ID,
                     this.setTransitionAsyncRequest);
 
@@ -437,8 +439,6 @@ public class SetTransitionSteps {
 
                 Assert.assertTrue("Invalid result, found: " + actualResult + " , expected: " + expectedResult,
                         (actualResult == null && expectedResult == null) || actualResult.equals(expectedResult));
-
-                // TODO: check description
             }
         } catch (final Throwable t) {
             LOGGER.error("Exception [{}]: {}", t.getClass().getSimpleName(), t.getMessage());
@@ -450,8 +450,8 @@ public class SetTransitionSteps {
     // === Private methods ===
     private void setUp() {
         Mockito.reset(new Object[] { this.deviceRepositoryMock, this.organisationRepositoryMock,
-                this.deviceAuthorizationRepositoryMock, this.deviceLogItemRepositoryMock, this.oslpDeviceRepositoryMock,
-                this.webServiceResponseMessageSenderMock, this.channelMock });
+                this.deviceAuthorizationRepositoryMock, this.deviceLogItemRepositoryMock,
+                this.oslpDeviceRepositoryMock, this.webServiceResponseMessageSenderMock, this.channelMock });
 
         this.adHocManagementEndpoint = new PublicLightingAdHocManagementEndpoint(this.adHocManagementService,
                 new AdHocManagementMapper());

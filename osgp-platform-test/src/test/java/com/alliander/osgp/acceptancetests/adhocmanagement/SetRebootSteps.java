@@ -13,6 +13,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,8 +60,10 @@ import com.alliander.osgp.domain.core.entities.DeviceBuilder;
 import com.alliander.osgp.domain.core.entities.Organisation;
 import com.alliander.osgp.domain.core.exceptions.ValidationException;
 import com.alliander.osgp.domain.core.repositories.DeviceAuthorizationRepository;
+import com.alliander.osgp.domain.core.repositories.DeviceFunctionMappingRepository;
 import com.alliander.osgp.domain.core.repositories.DeviceRepository;
 import com.alliander.osgp.domain.core.repositories.OrganisationRepository;
+import com.alliander.osgp.domain.core.valueobjects.DeviceFunction;
 import com.alliander.osgp.domain.core.valueobjects.DeviceFunctionGroup;
 import com.alliander.osgp.domain.core.valueobjects.PlatformFunctionGroup;
 import com.alliander.osgp.logging.domain.repositories.DeviceLogItemRepository;
@@ -137,6 +140,8 @@ public class SetRebootSteps {
     @Autowired
     private DeviceAuthorizationRepository deviceAuthorizationRepositoryMock;
     @Autowired
+    private DeviceFunctionMappingRepository deviceFunctionMappingRepositoryMock;
+    @Autowired
     private DeviceLogItemRepository deviceLogItemRepositoryMock;
     @Autowired
     private OslpDeviceRepository oslpDeviceRepositoryMock;
@@ -202,6 +207,13 @@ public class SetRebootSteps {
                 .withFunctionGroup(DeviceFunctionGroup.AD_HOC).build());
         when(this.deviceAuthorizationRepositoryMock.findByOrganisationAndDevice(this.organisation, this.device))
                 .thenReturn(authorizations);
+
+        final List<DeviceFunction> deviceFunctions = new ArrayList<>();
+        deviceFunctions.add(DeviceFunction.SET_REBOOT);
+
+        when(this.deviceFunctionMappingRepositoryMock.findByDeviceFunctionGroups(any(ArrayList.class))).thenReturn(
+                deviceFunctions);
+
     }
 
     @DomainStep("a get set reboot response request with correlationId (.*) and deviceId (.*)")
@@ -235,7 +247,7 @@ public class SetRebootSteps {
                 when(messageMock.getStringProperty("OrganisationIdentification")).thenReturn(ORGANISATION_ID);
                 when(messageMock.getStringProperty("DeviceIdentification")).thenReturn(deviceId);
                 final ResponseMessageResultType result = ResponseMessageResultType.valueOf(qresult);
-                Object dataObject = null;
+                Serializable dataObject = null;
                 OsgpException exception = null;
                 if (result.equals(ResponseMessageResultType.NOT_OK)) {
                     dataObject = new FunctionalException(FunctionalExceptionType.VALIDATION_ERROR,
@@ -263,14 +275,7 @@ public class SetRebootSteps {
         LOGGER.info("WHEN: \"the set reboot request is received\".");
 
         try {
-
             this.setRebootAsyncResponse = this.adHocManagementEndpoint.setReboot(ORGANISATION_ID, this.request);
-
-            // Add sleep to enable queue processing
-            for (int i = 0; i < 1000; i++) {
-                Thread.sleep(1);
-            }
-
         } catch (final Throwable t) {
             LOGGER.error("Exception [{}]: {}", t.getClass().getSimpleName(), t.getMessage());
             this.throwable = t;
@@ -299,7 +304,6 @@ public class SetRebootSteps {
                 "THEN: \"the set reboot request should return a set reboot response with a correlationId and deviceId {}\".",
                 deviceId);
 
-        // TODO Add check on device id
         try {
             Assert.assertNotNull("Set Reboot Async Response should not be null", this.setRebootAsyncResponse);
             Assert.assertNotNull("Async Response should not be null", this.setRebootAsyncResponse.getAsyncResponse());
@@ -367,7 +371,7 @@ public class SetRebootSteps {
 
         try {
             final ArgumentCaptor<OslpEnvelope> argument = ArgumentCaptor.forClass(OslpEnvelope.class);
-            verify(this.channelMock, timeout(1000).times(count)).write(argument.capture());
+            verify(this.channelMock, timeout(10000).times(count)).write(argument.capture());
 
             if (isMessageSent) {
                 this.oslpResponse = argument.getValue();
@@ -429,8 +433,6 @@ public class SetRebootSteps {
 
                 Assert.assertTrue("Invalid result, found: " + actualResult + " , expected: " + expectedResult,
                         (actualResult == null && expectedResult == null) || actualResult.equals(expectedResult));
-
-                // TODO: check description
             }
         } catch (final Throwable t) {
             LOGGER.error("Exception [{}]: {}", t.getClass().getSimpleName(), t.getMessage());

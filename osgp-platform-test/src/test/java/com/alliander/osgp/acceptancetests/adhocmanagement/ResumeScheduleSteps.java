@@ -13,6 +13,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,15 +54,18 @@ import com.alliander.osgp.adapter.ws.schema.publiclighting.adhocmanagement.Resum
 import com.alliander.osgp.adapter.ws.schema.publiclighting.adhocmanagement.ResumeScheduleRequest;
 import com.alliander.osgp.adapter.ws.schema.publiclighting.adhocmanagement.ResumeScheduleResponse;
 import com.alliander.osgp.adapter.ws.schema.publiclighting.common.AsyncRequest;
-import com.alliander.osgp.domain.core.entities.Device;
 import com.alliander.osgp.domain.core.entities.DeviceAuthorization;
 import com.alliander.osgp.domain.core.entities.DeviceAuthorizationBuilder;
 import com.alliander.osgp.domain.core.entities.DeviceBuilder;
 import com.alliander.osgp.domain.core.entities.Organisation;
+import com.alliander.osgp.domain.core.entities.Ssld;
 import com.alliander.osgp.domain.core.exceptions.ValidationException;
 import com.alliander.osgp.domain.core.repositories.DeviceAuthorizationRepository;
+import com.alliander.osgp.domain.core.repositories.DeviceFunctionMappingRepository;
 import com.alliander.osgp.domain.core.repositories.DeviceRepository;
 import com.alliander.osgp.domain.core.repositories.OrganisationRepository;
+import com.alliander.osgp.domain.core.repositories.SsldRepository;
+import com.alliander.osgp.domain.core.valueobjects.DeviceFunction;
 import com.alliander.osgp.domain.core.valueobjects.DeviceFunctionGroup;
 import com.alliander.osgp.domain.core.valueobjects.PlatformFunctionGroup;
 import com.alliander.osgp.logging.domain.repositories.DeviceLogItemRepository;
@@ -115,16 +119,19 @@ public class ResumeScheduleSteps {
     @Qualifier("domainPublicLightingOutgoingWebServiceResponseMessageSender")
     private WebServiceResponseMessageSender webServiceResponseMessageSenderMock;
 
-    // OSGP Core fields
-    private Device device;
+    private Ssld device;
     private Organisation organisation;
 
     @Autowired
     private DeviceRepository deviceRepositoryMock;
     @Autowired
+    private SsldRepository ssldRepositoryMock;
+    @Autowired
     private OrganisationRepository organisationRepositoryMock;
     @Autowired
     private DeviceAuthorizationRepository deviceAuthorizationRepositoryMock;
+    @Autowired
+    private DeviceFunctionMappingRepository deviceFunctionMappingRepositoryMock;
     @Autowired
     private DeviceLogItemRepository deviceLogItemRepositoryMock;
 
@@ -178,8 +185,11 @@ public class ResumeScheduleSteps {
         switch (status.toUpperCase()) {
         case "ACTIVE":
             this.createDevice(deviceIdentification, true);
+
             this.device.setHasSchedule(hasSchedule != null ? hasSchedule : false);
             when(this.deviceRepositoryMock.findByDeviceIdentification(deviceIdentification)).thenReturn(this.device);
+            when(this.ssldRepositoryMock.findByDeviceIdentification(deviceIdentification)).thenReturn(this.device);
+            when(this.ssldRepositoryMock.findOne(1L)).thenReturn(this.device);
             when(this.oslpDeviceRepositoryMock.findByDeviceIdentification(deviceIdentification)).thenReturn(
                     this.oslpDevice);
             when(this.oslpDeviceRepositoryMock.findByDeviceUid(DEVICE_UID)).thenReturn(this.oslpDevice);
@@ -199,10 +209,14 @@ public class ResumeScheduleSteps {
             break;
         case "UNKNOWN":
             when(this.deviceRepositoryMock.findByDeviceIdentification(deviceIdentification)).thenReturn(null);
+            when(this.ssldRepositoryMock.findByDeviceIdentification(deviceIdentification)).thenReturn(null);
+            when(this.ssldRepositoryMock.findOne(1L)).thenReturn(null);
             break;
         case "UNREGISTERED":
             this.createDevice(deviceIdentification, false);
             when(this.deviceRepositoryMock.findByDeviceIdentification(deviceIdentification)).thenReturn(this.device);
+            when(this.ssldRepositoryMock.findByDeviceIdentification(deviceIdentification)).thenReturn(this.device);
+            when(this.ssldRepositoryMock.findOne(1L)).thenReturn(this.device);
             break;
         default:
             throw new Exception("Unknown device status");
@@ -222,7 +236,13 @@ public class ResumeScheduleSteps {
         authorizations.add(new DeviceAuthorizationBuilder().withDevice(this.device).withOrganisation(this.organisation)
                 .withFunctionGroup(DeviceFunctionGroup.AD_HOC).build());
         when(this.deviceAuthorizationRepositoryMock.findByOrganisationAndDevice(this.organisation, this.device))
-                .thenReturn(authorizations);
+        .thenReturn(authorizations);
+
+        final List<DeviceFunction> deviceFunctions = new ArrayList<>();
+        deviceFunctions.add(DeviceFunction.RESUME_SCHEDULE);
+
+        when(this.deviceFunctionMappingRepositoryMock.findByDeviceFunctionGroups(any(ArrayList.class))).thenReturn(
+                deviceFunctions);
     }
 
     @DomainStep("a resume schedule response request with correlationId (.*) and deviceId (.*)")
@@ -257,7 +277,7 @@ public class ResumeScheduleSteps {
                 when(messageMock.getStringProperty("DeviceIdentification")).thenReturn(deviceId);
 
                 final ResponseMessageResultType result = ResponseMessageResultType.valueOf(qresult);
-                Object dataObject = null;
+                Serializable dataObject = null;
                 OsgpException exception = null;
                 if (result.equals(ResponseMessageResultType.NOT_OK)) {
                     dataObject = new FunctionalException(FunctionalExceptionType.VALIDATION_ERROR,
@@ -330,8 +350,6 @@ public class ResumeScheduleSteps {
     @DomainStep("the resume schedule request should return a validation error")
     public boolean thenTheResumeScheduleRequestShouldReturnAValidationError() {
         try {
-            // Assert.assertNull("Resume Schedule Async Response should be null",
-            // this.resumeScheduleAsyncResponse);
             Assert.assertNotNull("Throwable should not be null", this.throwable);
         } catch (final Exception e) {
             LOGGER.error("Exception [{}]: {}", e.getClass().getSimpleName(), e.getMessage());
@@ -418,7 +436,7 @@ public class ResumeScheduleSteps {
     private void createDevice(final String deviceIdentification, final boolean activated) {
         LOGGER.info("Creating device [{}] with active [{}]", deviceIdentification, activated);
 
-        this.device = new DeviceBuilder().withDeviceIdentification(deviceIdentification)
+        this.device = (Ssld) new DeviceBuilder().withDeviceIdentification(deviceIdentification)
                 .withNetworkAddress(activated ? InetAddress.getLoopbackAddress() : null)
                 .withPublicKeyPresent(PUBLIC_KEY_PRESENT)
                 .withProtocolInfo(ProtocolInfoTestUtils.getProtocolInfo(PROTOCOL, PROTOCOL_VERSION))
@@ -431,9 +449,10 @@ public class ResumeScheduleSteps {
     // === Private methods ===
 
     private void setUp() {
-        Mockito.reset(new Object[] { this.deviceRepositoryMock, this.organisationRepositoryMock,
-                this.deviceAuthorizationRepositoryMock, this.deviceLogItemRepositoryMock, this.channelMock,
-                this.oslpDeviceRepositoryMock, this.webServiceResponseMessageSenderMock });
+        Mockito.reset(new Object[] { this.deviceRepositoryMock, this.ssldRepositoryMock,
+                this.organisationRepositoryMock, this.deviceAuthorizationRepositoryMock,
+                this.deviceLogItemRepositoryMock, this.channelMock, this.oslpDeviceRepositoryMock,
+                this.webServiceResponseMessageSenderMock });
 
         this.adHocManagementEndpoint = new PublicLightingAdHocManagementEndpoint(this.adHocManagementService,
                 new AdHocManagementMapper());

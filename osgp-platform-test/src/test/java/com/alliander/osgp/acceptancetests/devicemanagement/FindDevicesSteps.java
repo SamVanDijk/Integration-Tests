@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -46,6 +47,7 @@ import com.alliander.osgp.domain.core.exceptions.ValidationException;
 import com.alliander.osgp.domain.core.repositories.DeviceAuthorizationRepository;
 import com.alliander.osgp.domain.core.repositories.DeviceRepository;
 import com.alliander.osgp.domain.core.repositories.OrganisationRepository;
+import com.alliander.osgp.domain.core.repositories.SsldRepository;
 import com.alliander.osgp.domain.core.valueobjects.DeviceFunctionGroup;
 import com.alliander.osgp.domain.core.valueobjects.PlatformFunctionGroup;
 
@@ -70,6 +72,8 @@ public class FindDevicesSteps {
     @Autowired
     private DeviceRepository deviceRepositoryMock;
     @Autowired
+    private SsldRepository ssldRepositoryMock;
+    @Autowired
     private OrganisationRepository organisationRepositoryMock;
     @Autowired
     private DeviceAuthorizationRepository deviceAuthorizationRepositoryMock;
@@ -77,14 +81,18 @@ public class FindDevicesSteps {
     // Application Services
     @Autowired
     private DeviceManagementService deviceManagementService;
+    @Autowired
+    @Qualifier("coreDeviceManagementMapper")
+    private DeviceManagementMapper deviceManagementMapper;
+
     private Organisation ownerOrganisation;
 
     private void setUp() {
-        Mockito.reset(new Object[] { this.deviceRepositoryMock, this.organisationRepositoryMock,
-                this.deviceAuthorizationRepositoryMock });
+        Mockito.reset(new Object[] { this.deviceRepositoryMock, this.ssldRepositoryMock,
+                this.organisationRepositoryMock, this.deviceAuthorizationRepositoryMock });
 
         this.deviceManagementEndpoint = new DeviceManagementEndpoint(this.deviceManagementService,
-                new DeviceManagementMapper());
+                this.deviceManagementMapper);
 
         this.request = null;
         this.response = null;
@@ -123,6 +131,8 @@ public class FindDevicesSteps {
         this.devices = new PageImpl<Device>(devicesList, this.pageRequest, devicesList.size());
 
         when(this.deviceRepositoryMock.findAll(this.pageRequest)).thenReturn(this.devices);
+        when(this.ssldRepositoryMock.findByDeviceIdentification(any(String.class))).thenReturn(null);
+        when(this.ssldRepositoryMock.findOne(any(Long.class))).thenReturn(null);
 
         final List<DeviceAuthorization> authorizations = new ArrayList<>();
         authorizations.add(new DeviceAuthorizationBuilder().withDevice(this.device).withOrganisation(this.organisation)

@@ -48,12 +48,16 @@ import com.alliander.osgp.domain.core.entities.DeviceBuilder;
 import com.alliander.osgp.domain.core.entities.Event;
 import com.alliander.osgp.domain.core.entities.EventBuilder;
 import com.alliander.osgp.domain.core.entities.Organisation;
+import com.alliander.osgp.domain.core.entities.Ssld;
 import com.alliander.osgp.domain.core.exceptions.ArgumentNullOrEmptyException;
 import com.alliander.osgp.domain.core.repositories.DeviceAuthorizationRepository;
+import com.alliander.osgp.domain.core.repositories.DeviceFunctionMappingRepository;
 import com.alliander.osgp.domain.core.repositories.DeviceRepository;
 import com.alliander.osgp.domain.core.repositories.EventRepository;
 import com.alliander.osgp.domain.core.repositories.OrganisationRepository;
+import com.alliander.osgp.domain.core.repositories.SsldRepository;
 import com.alliander.osgp.domain.core.specifications.EventSpecifications;
+import com.alliander.osgp.domain.core.valueobjects.DeviceFunction;
 import com.alliander.osgp.domain.core.valueobjects.DeviceFunctionGroup;
 import com.alliander.osgp.domain.core.valueobjects.EventType;
 import com.alliander.osgp.domain.core.valueobjects.PlatformFunctionGroup;
@@ -64,7 +68,6 @@ public class RetrieveReceivedEventNotificationsSteps {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RetrieveReceivedEventNotificationsSteps.class);
 
-    private static final String DEVICE_UID = "AAAAAAAAAAYAAA==";
     private static final String ORGANISATION_PREFIX = "ORG";
     private static final int PAGESIZELIMIT = 300;
     private static final Integer DEFAULT_PAGE = 1;
@@ -76,9 +79,12 @@ public class RetrieveReceivedEventNotificationsSteps {
     @Autowired
     @Qualifier("wsCoreDeviceManagementService")
     private DeviceManagementService deviceManagementService;
+    @Autowired
+    @Qualifier("coreDeviceManagementMapper")
+    private DeviceManagementMapper deviceManagementMapper;
 
     private Organisation organisation;
-    private Device device;
+    private Ssld device;
     private final EventSpecifications eventSpecifications = new JpaEventSpecifications();
     @SuppressWarnings("unused")
     private Specifications<Event> specifications;
@@ -100,7 +106,11 @@ public class RetrieveReceivedEventNotificationsSteps {
     @Autowired
     private DeviceRepository deviceRepositoryMock;
     @Autowired
+    private SsldRepository ssldRepositoryMock;
+    @Autowired
     private DeviceAuthorizationRepository deviceAuthorizationRepositoryMock;
+    @Autowired
+    private DeviceFunctionMappingRepository deviceFunctionMappingRepositoryMock;
 
     // === SET UP ===
 
@@ -108,11 +118,11 @@ public class RetrieveReceivedEventNotificationsSteps {
         // init mocks to set ArgumentCaptors
         MockitoAnnotations.initMocks(this);
         // reset the mocks
-        Mockito.reset(new Object[] { this.deviceRepositoryMock, this.organisationRepositoryMock,
-                this.eventRepositoryMock, this.deviceAuthorizationRepositoryMock });
+        Mockito.reset(new Object[] { this.deviceRepositoryMock, this.ssldRepositoryMock,
+                this.organisationRepositoryMock, this.eventRepositoryMock, this.deviceAuthorizationRepositoryMock });
 
         this.deviceManagementEndpoint = new DeviceManagementEndpoint(this.deviceManagementService,
-                new DeviceManagementMapper());
+                this.deviceManagementMapper);
 
         this.request = null;
         this.response = null;
@@ -139,16 +149,24 @@ public class RetrieveReceivedEventNotificationsSteps {
         LOGGER.info("GIVEN: an authorized device: {}", deviceIdentification);
 
         // Create the device
-        this.device = new DeviceBuilder().withDeviceIdentification(deviceIdentification)
+        this.device = (Ssld) new DeviceBuilder().withDeviceIdentification(deviceIdentification)
                 .withNetworkAddress(InetAddress.getLoopbackAddress()).isActivated(true).build();
 
         when(this.deviceRepositoryMock.findByDeviceIdentification(deviceIdentification)).thenReturn(this.device);
+        when(this.ssldRepositoryMock.findByDeviceIdentification(deviceIdentification)).thenReturn(this.device);
+        when(this.ssldRepositoryMock.findOne(1L)).thenReturn(this.device);
 
         final List<DeviceAuthorization> authorizations = new ArrayList<>();
         authorizations.add(new DeviceAuthorization(this.device, this.organisation, DeviceFunctionGroup.MANAGEMENT));
 
         when(this.deviceAuthorizationRepositoryMock.findByOrganisationAndDevice(this.organisation, this.device))
         .thenReturn(authorizations);
+
+        final List<DeviceFunction> deviceFunctions = new ArrayList<>();
+        deviceFunctions.add(DeviceFunction.GET_EVENT_NOTIFICATIONS);
+
+        when(this.deviceFunctionMappingRepositoryMock.findByDeviceFunctionGroups(any(ArrayList.class))).thenReturn(
+                deviceFunctions);
     }
 
     @DomainStep("a received event notification (.*), (.*) and (.*) from (.*)")
@@ -179,11 +197,6 @@ public class RetrieveReceivedEventNotificationsSteps {
         this.request.setPageSize(DEFAULT_PAGESIZE);
 
         this.request.setDeviceIdentification(this.device.getDeviceIdentification());
-        // this.specifications =
-        // Specifications.where(this.eventSpecifications.isAuthorized(this.organisation));
-        // this.pageRequest = new PageRequest(DEFAULT_PAGE, DEFAULT_PAGESIZE,
-        // Sort.Direction.DESC, "creationTime");
-
     }
 
     @DomainStep("a retrieve event notification request with requested page (.*) and pageSize (.*)")
@@ -207,7 +220,6 @@ public class RetrieveReceivedEventNotificationsSteps {
     public void givenAReceivedEventNotificationAtFrom(final String timestamp, final String device) {
         LOGGER.info("GIVEN: a received event notification at (.*) from (.*)", timestamp, device);
 
-        // TODO: parse timestamp
         this.event = new EventBuilder().withDevice(new DeviceBuilder().withDeviceIdentification(device).build())
                 .build();
 
@@ -247,11 +259,13 @@ public class RetrieveReceivedEventNotificationsSteps {
         LOGGER.info("GIVEN: the event notification must be filtered on {}, {}, and {}", new Object[] {
                 deviceIdentification, fromTimestamp, untilTimestamp });
 
-        // TODO: Filter on fromTimestamp
-        // TODO: Filter on untilTimestamp
+        // implement filter on fromTimestamp
+        // implement filter on untilTimestamp
         if (deviceIdentification != null && !deviceIdentification.equals("EMPTY")) {
             this.request.setDeviceIdentification(deviceIdentification);
             when(this.deviceRepositoryMock.findByDeviceIdentification(deviceIdentification)).thenReturn(this.device);
+            when(this.ssldRepositoryMock.findByDeviceIdentification(deviceIdentification)).thenReturn(this.device);
+            when(this.ssldRepositoryMock.findOne(1L)).thenReturn(this.device);
             final List<DeviceAuthorization> authorizations = new ArrayList<DeviceAuthorization>();
             authorizations.add(new DeviceAuthorizationBuilder().withOrganisation(this.organisation)
                     .withDevice(new DeviceBuilder().withDeviceIdentification(deviceIdentification).build())
@@ -288,9 +302,6 @@ public class RetrieveReceivedEventNotificationsSteps {
         LOGGER.info("THEN: the OSGP should send an event notification response");
 
         try {
-            // TODO: Verify the correct Specifications class and Page request
-            // class
-
             verify(this.eventRepositoryMock, times(1)).findAll(this.actualSpecifications.capture(),
                     this.actualPageRequest.capture());
         } catch (final Throwable t) {
@@ -309,28 +320,20 @@ public class RetrieveReceivedEventNotificationsSteps {
                 new Object[] { timestamp, deviceIdentification, event, description, index });
 
         final boolean sizeCorrect = this.response.getEvents().size() == 1;
-        final boolean deviceIdentificationCorrect = this.response.getEvents().get(0).getDeviceIdentification()
+
+        final com.alliander.osgp.adapter.ws.schema.core.devicemanagement.Event eventInstance = this.response
+                .getEvents().get(0);
+        final boolean deviceIdentificationCorrect = eventInstance.getDeviceIdentification()
                 .equals(deviceIdentification);
-        final boolean descriptionCorrect = this.response.getEvents().get(0).getDescription().equals(description);
-        final boolean eventCorrect = this.response.getEvents().get(0).getEventType().ordinal() == EventType.valueOf(
-                event).ordinal();
-        final boolean timeStampCorrect = true;
-        // TODO: Verify the timstamp of the event, not the creationTime of the
-        // event.
-        // && this.response
-        // .getEvents()
-        // .get(0)
-        // .getTimestamp()
-        // .toGregorianCalendar()
-        // .equals(DateTime.parse(timestamp).toGregorianCalendar())
+        final boolean descriptionCorrect = eventInstance.getDescription().equals(description);
+        final boolean eventCorrect = eventInstance.getEventType().ordinal() == EventType.valueOf(event).ordinal();
 
         boolean indexCorrect = true;
         if (index != null && index != "" && index != "EMPTY") {
             indexCorrect = this.response.getEvents().get(0).getIndex().equals(Integer.parseInt(index));
         }
 
-        return sizeCorrect && deviceIdentificationCorrect && descriptionCorrect && eventCorrect && timeStampCorrect
-                && indexCorrect;
+        return sizeCorrect && deviceIdentificationCorrect && descriptionCorrect && eventCorrect && indexCorrect;
     }
 
     /**
@@ -361,8 +364,7 @@ public class RetrieveReceivedEventNotificationsSteps {
     }
 
     /**
-     * Verify that the page object has the correct total values for total
-     * entities and total pages.
+     * Verify that the page object has the correct total values for total entities and total pages.
      *
      * @param totalNofEventNotifications
      * @param totalNofPages

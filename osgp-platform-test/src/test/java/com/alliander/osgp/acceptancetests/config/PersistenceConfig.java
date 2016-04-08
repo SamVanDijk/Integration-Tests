@@ -16,22 +16,24 @@ import com.alliander.osgp.adapter.ws.infra.specifications.JpaDeviceSpecification
 import com.alliander.osgp.adapter.ws.infra.specifications.JpaEventSpecifications;
 import com.alliander.osgp.adapter.ws.shared.db.domain.repositories.writable.WritableDeviceAuthorizationRepository;
 import com.alliander.osgp.adapter.ws.shared.db.domain.repositories.writable.WritableDeviceRepository;
+import com.alliander.osgp.adapter.ws.shared.db.domain.repositories.writable.WritableManufacturerRepository;
+import com.alliander.osgp.adapter.ws.shared.db.domain.repositories.writable.WritableSsldRepository;
 import com.alliander.osgp.core.db.api.repositories.DeviceDataRepository;
 import com.alliander.osgp.domain.core.repositories.DeviceAuthorizationRepository;
+import com.alliander.osgp.domain.core.repositories.DeviceFunctionMappingRepository;
 import com.alliander.osgp.domain.core.repositories.DeviceRepository;
 import com.alliander.osgp.domain.core.repositories.DomainInfoRepository;
 import com.alliander.osgp.domain.core.repositories.EventRepository;
-import com.alliander.osgp.domain.core.repositories.GasMeterDeviceRepository;
 import com.alliander.osgp.domain.core.repositories.OrganisationRepository;
 import com.alliander.osgp.domain.core.repositories.ProtocolInfoRepository;
 import com.alliander.osgp.domain.core.repositories.ScheduledTaskRepository;
-import com.alliander.osgp.domain.core.repositories.SmartMeteringDeviceRepository;
+import com.alliander.osgp.domain.core.repositories.SmartMeterRepository;
+import com.alliander.osgp.domain.core.repositories.SsldRepository;
 import com.alliander.osgp.domain.core.specifications.DeviceSpecifications;
 import com.alliander.osgp.domain.core.specifications.EventSpecifications;
 import com.alliander.osgp.logging.domain.repositories.DeviceLogItemRepository;
 import com.alliander.osgp.logging.domain.repositories.WebServiceMonitorLogRepository;
 
-//@Configuration
 public class PersistenceConfig {
 
     // // WS LOGGING
@@ -51,6 +53,12 @@ public class PersistenceConfig {
     }
 
     // OSGP CORE
+
+    @Bean
+    DeviceFunctionMappingRepository deviceFunctionMappingRepositoryMock() {
+        return mock(DeviceFunctionMappingRepository.class);
+    }
+
     @Bean
     public DeviceAuthorizationRepository deviceAuthorizationRepositoryMock() {
         return mock(DeviceAuthorizationRepository.class);
@@ -67,8 +75,18 @@ public class PersistenceConfig {
     }
 
     @Bean
-    public SmartMeteringDeviceRepository smartMeteringDeviceRepositoryMock() {
-        return mock(SmartMeteringDeviceRepository.class);
+    public SmartMeterRepository smartMeteringDeviceRepositoryMock() {
+        return mock(SmartMeterRepository.class);
+    }
+
+    @Bean
+    public SsldRepository ssldRepository() {
+        return mock(SsldRepository.class);
+    }
+
+    @Bean
+    public WritableSsldRepository writableSsldRepository() {
+        return mock(WritableSsldRepository.class);
     }
 
     @Bean
@@ -111,16 +129,14 @@ public class PersistenceConfig {
         return mock(ScheduledTaskRepository.class);
     }
 
-    // OSLP
-
     @Bean
-    OslpDeviceRepository oslpDeviceRepositoryMock() {
+    public WritableManufacturerRepository writableManufacturerRepositoryMock() {
+        return mock(WritableManufacturerRepository.class);
+    }
+
+    // OSLP
+    @Bean
+    public OslpDeviceRepository oslpDeviceRepositoryMock() {
         return mock(OslpDeviceRepository.class);
     }
-
-    @Bean
-    GasMeterDeviceRepository gasMeterDeviceRepositoryMock() {
-        return mock(GasMeterDeviceRepository.class);
-    }
-
 }

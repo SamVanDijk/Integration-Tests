@@ -13,6 +13,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +44,7 @@ import com.alliander.osgp.adapter.protocol.oslp.domain.entities.OslpDeviceBuilde
 import com.alliander.osgp.adapter.protocol.oslp.domain.repositories.OslpDeviceRepository;
 import com.alliander.osgp.adapter.protocol.oslp.infra.networking.OslpChannelHandlerClient;
 import com.alliander.osgp.adapter.protocol.oslp.infra.networking.OslpDeviceService;
+import com.alliander.osgp.adapter.ws.core.application.mapping.FirmwareManagementMapper;
 import com.alliander.osgp.adapter.ws.core.application.services.FirmwareManagementService;
 import com.alliander.osgp.adapter.ws.core.endpoints.FirmwareManagementEndpoint;
 import com.alliander.osgp.adapter.ws.core.infra.jms.CommonResponseMessageFinder;
@@ -58,8 +60,10 @@ import com.alliander.osgp.domain.core.entities.DeviceBuilder;
 import com.alliander.osgp.domain.core.entities.Organisation;
 import com.alliander.osgp.domain.core.exceptions.ValidationException;
 import com.alliander.osgp.domain.core.repositories.DeviceAuthorizationRepository;
+import com.alliander.osgp.domain.core.repositories.DeviceFunctionMappingRepository;
 import com.alliander.osgp.domain.core.repositories.DeviceRepository;
 import com.alliander.osgp.domain.core.repositories.OrganisationRepository;
+import com.alliander.osgp.domain.core.valueobjects.DeviceFunction;
 import com.alliander.osgp.domain.core.valueobjects.DeviceFunctionGroup;
 import com.alliander.osgp.domain.core.valueobjects.PlatformFunctionGroup;
 import com.alliander.osgp.logging.domain.repositories.DeviceLogItemRepository;
@@ -82,7 +86,6 @@ public class GetFirmwareVersionSteps {
     private static final String ORGANISATION_PREFIX = "ORG";
     private static final String DEVICE_UID = "AAAAAAAAAAYAAAAA";
 
-    // TODO - Add as parameters to tests
     private static final Boolean PUBLIC_KEY_PRESENT = true;
     private static final String PROTOCOL = "OSLP";
     private static final String PROTOCOL_VERSION = "1.0";
@@ -121,6 +124,8 @@ public class GetFirmwareVersionSteps {
     private OrganisationRepository organisationRepositoryMock;
     @Autowired
     private DeviceAuthorizationRepository deviceAuthorizationRepositoryMock;
+    @Autowired
+    private DeviceFunctionMappingRepository deviceFunctionMappingRepositoryMock;
     @Autowired
     private DeviceLogItemRepository deviceLogItemRepositoryMock;
 
@@ -190,7 +195,13 @@ public class GetFirmwareVersionSteps {
         authorizations.add(new DeviceAuthorizationBuilder().withDevice(this.device).withOrganisation(this.organisation)
                 .withFunctionGroup(DeviceFunctionGroup.FIRMWARE).build());
         when(this.deviceAuthorizationRepositoryMock.findByOrganisationAndDevice(this.organisation, this.device))
-                .thenReturn(authorizations);
+        .thenReturn(authorizations);
+
+        final List<DeviceFunction> deviceFunctions = new ArrayList<>();
+        deviceFunctions.add(DeviceFunction.GET_FIRMWARE_VERSION);
+
+        when(this.deviceFunctionMappingRepositoryMock.findByDeviceFunctionGroups(any(ArrayList.class))).thenReturn(
+                deviceFunctions);
     }
 
     @DomainStep("the get firmware version oslp message from the device contains (.*)")
@@ -248,7 +259,7 @@ public class GetFirmwareVersionSteps {
                 when(messageMock.getStringProperty("OrganisationIdentification")).thenReturn(ORGANISATION_ID);
                 when(messageMock.getStringProperty("DeviceIdentification")).thenReturn(deviceId);
                 final ResponseMessageResultType result = ResponseMessageResultType.valueOf(qresult);
-                Object dataObject = null;
+                Serializable dataObject = null;
                 OsgpException exception = null;
                 if (result.equals(ResponseMessageResultType.NOT_OK)) {
                     dataObject = new FunctionalException(FunctionalExceptionType.VALIDATION_ERROR,
@@ -261,7 +272,7 @@ public class GetFirmwareVersionSteps {
                         exception, dataObject);
                 when(messageMock.getObject()).thenReturn(message);
             } catch (final JMSException e) {
-                e.printStackTrace();
+                LOGGER.error("JMSException", e);
             }
 
             when(this.commonResponsesJmsTemplate.receiveSelected(any(String.class))).thenReturn(messageMock);
@@ -305,7 +316,6 @@ public class GetFirmwareVersionSteps {
                 "THEN: \"the get firmware version request should return an async response with a correlationId and deviceId {}\".",
                 deviceId);
 
-        // TODO Add check on device id
         try {
             Assert.assertNotNull("asyncResponse should not be null", this.asyncResponse);
             Assert.assertNotNull("CorrelationId should not be null", this.asyncResponse.getAsyncResponse()
@@ -442,7 +452,8 @@ public class GetFirmwareVersionSteps {
                 this.deviceAuthorizationRepositoryMock, this.deviceLogItemRepositoryMock, this.channelMock,
                 this.webServiceResponseMessageSenderMock, this.oslpDeviceRepositoryMock });
 
-        this.firmwareManagementEndpoint = new FirmwareManagementEndpoint(this.firmwareManagementService);
+        this.firmwareManagementEndpoint = new FirmwareManagementEndpoint(this.firmwareManagementService,
+                new FirmwareManagementMapper());
         this.deviceRegistrationService.setSequenceNumberMaximum(OslpTestUtils.OSLP_SEQUENCE_NUMBER_MAXIMUM);
         this.deviceRegistrationService.setSequenceNumberWindow(OslpTestUtils.OSLP_SEQUENCE_NUMBER_WINDOW);
 
@@ -461,7 +472,6 @@ public class GetFirmwareVersionSteps {
                 .withPublicKeyPresent(PUBLIC_KEY_PRESENT)
                 .withProtocolInfo(ProtocolInfoTestUtils.getProtocolInfo(PROTOCOL, PROTOCOL_VERSION))
                 .isActivated(activated).build();
-
     }
 
     private void createOslpDevice(final String deviceIdentification) {
@@ -470,5 +480,4 @@ public class GetFirmwareVersionSteps {
         this.oslpDevice = new OslpDeviceBuilder().withDeviceIdentification(deviceIdentification)
                 .withDeviceUid(DEVICE_UID).build();
     }
-
 }

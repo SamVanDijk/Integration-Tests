@@ -13,6 +13,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,8 +60,10 @@ import com.alliander.osgp.domain.core.entities.DeviceBuilder;
 import com.alliander.osgp.domain.core.entities.Organisation;
 import com.alliander.osgp.domain.core.exceptions.ValidationException;
 import com.alliander.osgp.domain.core.repositories.DeviceAuthorizationRepository;
+import com.alliander.osgp.domain.core.repositories.DeviceFunctionMappingRepository;
 import com.alliander.osgp.domain.core.repositories.DeviceRepository;
 import com.alliander.osgp.domain.core.repositories.OrganisationRepository;
+import com.alliander.osgp.domain.core.valueobjects.DeviceFunction;
 import com.alliander.osgp.domain.core.valueobjects.DeviceFunctionGroup;
 import com.alliander.osgp.domain.core.valueobjects.PlatformFunctionGroup;
 import com.alliander.osgp.logging.domain.repositories.DeviceLogItemRepository;
@@ -81,7 +84,6 @@ public class StopDeviceTestSteps {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StopDeviceTestSteps.class);
 
-    // private static final String DEVICE_ID = "DEVICE-01";
     private static final String DEVICE_UID = "AAAAAAAAAAYAAAAA";
 
     private static final String ORGANISATION_PREFIX = "ORG";
@@ -90,7 +92,6 @@ public class StopDeviceTestSteps {
     private static final String ORGANISATION_ID_EMPTY = "";
     private static final String ORGANISATION_ID_SPACES = "   ";
 
-    // TODO - Add as parameters to tests
     private static final Boolean PUBLIC_KEY_PRESENT = true;
     private static final String PROTOCOL = "OSLP";
     private static final String PROTOCOL_VERSION = "1.0";
@@ -129,6 +130,8 @@ public class StopDeviceTestSteps {
     private OrganisationRepository organisationRepositoryMock;
     @Autowired
     private DeviceAuthorizationRepository deviceAuthorizationRepositoryMock;
+    @Autowired
+    private DeviceFunctionMappingRepository deviceFunctionMappingRepositoryMock;
     @Autowired
     private DeviceLogItemRepository deviceLogItemRepositoryMock;
 
@@ -204,7 +207,13 @@ public class StopDeviceTestSteps {
         authorizations.add(new DeviceAuthorizationBuilder().withDevice(this.device).withOrganisation(this.organisation)
                 .withFunctionGroup(DeviceFunctionGroup.INSTALLATION).build());
         when(this.deviceAuthorizationRepositoryMock.findByOrganisationAndDevice(this.organisation, this.device))
-        .thenReturn(authorizations);
+                .thenReturn(authorizations);
+
+        final List<DeviceFunction> deviceFunctions = new ArrayList<>();
+        deviceFunctions.add(DeviceFunction.STOP_SELF_TEST);
+
+        when(this.deviceFunctionMappingRepositoryMock.findByDeviceFunctionGroups(any(ArrayList.class))).thenReturn(
+                deviceFunctions);
     }
 
     @DomainStep("the stop device test oslp message from the device")
@@ -261,7 +270,7 @@ public class StopDeviceTestSteps {
                         this.organisation.getOrganisationIdentification());
                 when(messageMock.getStringProperty("DeviceIdentification")).thenReturn(deviceId);
                 final ResponseMessageResultType result = ResponseMessageResultType.valueOf(qresult);
-                Object dataObject = null;
+                Serializable dataObject = null;
                 OsgpException exception = null;
                 if (result.equals(ResponseMessageResultType.NOT_OK)) {
                     dataObject = new FunctionalException(FunctionalExceptionType.VALIDATION_ERROR,
@@ -272,8 +281,7 @@ public class StopDeviceTestSteps {
                         this.organisation.getOrganisationIdentification(), deviceId, result, exception, dataObject);
                 when(messageMock.getObject()).thenReturn(message);
             } catch (final JMSException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                LOGGER.error("JMSException", e);
             }
 
             when(this.commonResponsesJmsTemplate.receiveSelected(any(String.class))).thenReturn(messageMock);

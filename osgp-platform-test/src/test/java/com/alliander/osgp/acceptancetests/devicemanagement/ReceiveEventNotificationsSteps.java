@@ -9,9 +9,7 @@ package com.alliander.osgp.acceptancetests.devicemanagement;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -42,11 +40,12 @@ import com.alliander.osgp.adapter.protocol.oslp.domain.entities.OslpDevice;
 import com.alliander.osgp.adapter.protocol.oslp.domain.entities.OslpDeviceBuilder;
 import com.alliander.osgp.adapter.protocol.oslp.domain.repositories.OslpDeviceRepository;
 import com.alliander.osgp.adapter.protocol.oslp.infra.networking.OslpChannelHandlerServer;
-import com.alliander.osgp.domain.core.entities.Device;
 import com.alliander.osgp.domain.core.entities.DeviceBuilder;
 import com.alliander.osgp.domain.core.entities.EventBuilder;
+import com.alliander.osgp.domain.core.entities.Ssld;
 import com.alliander.osgp.domain.core.repositories.DeviceRepository;
 import com.alliander.osgp.domain.core.repositories.EventRepository;
+import com.alliander.osgp.domain.core.repositories.SsldRepository;
 import com.alliander.osgp.domain.core.valueobjects.EventType;
 import com.alliander.osgp.logging.domain.repositories.DeviceLogItemRepository;
 import com.alliander.osgp.oslp.Oslp.Event;
@@ -64,7 +63,6 @@ public class ReceiveEventNotificationsSteps {
     private static final String EMPTY_INDEX = "EMPTY";
     private static final String DESCRIPTION = "dummy";
 
-    // TODO - Add as parameters to tests
     private static final Boolean PUBLIC_KEY_PRESENT = true;
     private static final String PROTOCOL = "OSLP";
     private static final String PROTOCOL_VERSION = "1.0";
@@ -73,7 +71,11 @@ public class ReceiveEventNotificationsSteps {
 
     @Autowired
     private DeviceRepository deviceRepositoryMock;
-    private Device device;
+
+    @Autowired
+    private SsldRepository ssldRepositoryMock;
+
+    private Ssld device;
 
     @Autowired
     private EventRepository eventRepositoryMock;
@@ -116,13 +118,13 @@ public class ReceiveEventNotificationsSteps {
 
     @DomainStep("a registered device (.*)")
     public void givenARegisteredDevice(final String deviceIdentification) throws NoSuchAlgorithmException,
-            InvalidKeySpecException, IOException {
+    InvalidKeySpecException, IOException {
 
         LOGGER.info("GIVEN: \"a registered device\".");
 
         this.setup();
 
-        this.device = new DeviceBuilder().withDeviceIdentification(deviceIdentification)
+        this.device = (Ssld) new DeviceBuilder().withDeviceIdentification(deviceIdentification)
                 .withNetworkAddress(InetAddress.getLoopbackAddress()).withPublicKeyPresent(PUBLIC_KEY_PRESENT)
                 .withProtocolInfo(ProtocolInfoTestUtils.getProtocolInfo(PROTOCOL, PROTOCOL_VERSION)).isActivated(true)
                 .build();
@@ -135,11 +137,13 @@ public class ReceiveEventNotificationsSteps {
         when(this.oslpDeviceRepositoryMock.save(this.oslpDevice)).thenReturn(this.oslpDevice);
         when(this.deviceRepositoryMock.findByDeviceIdentification(any(String.class))).thenReturn(this.device);
         when(this.deviceRepositoryMock.save(this.device)).thenReturn(this.device);
+        when(this.ssldRepositoryMock.findByDeviceIdentification(any(String.class))).thenReturn(this.device);
+        when(this.ssldRepositoryMock.findOne(any(Long.class))).thenReturn(this.device);
     }
 
     @DomainStep("a unregistered device (.*)")
     public void givenAUnregisteredDevice(final String device) throws NoSuchAlgorithmException, InvalidKeySpecException,
-            IOException {
+    IOException {
 
         LOGGER.info("GIVEN: \"a unregistered device\".");
 
@@ -207,14 +211,6 @@ public class ReceiveEventNotificationsSteps {
 
         LOGGER.info("THEN: \"the OSLP event notification message is stored\".");
 
-        // Build in delay for preventing failed tests...
-        try {
-            Thread.sleep(1000);
-        } catch (final InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-
         final ByteString index = this.request.getNotifications(0).getIndex();
         if (index.isEmpty()) {
             return this.sendEventNotification(1, new Integer[] { null });
@@ -227,14 +223,6 @@ public class ReceiveEventNotificationsSteps {
     public boolean thenNumberOfEventsIsStored(final int numberOfEvents, final Integer[] expectedIndexes) {
 
         LOGGER.info("THEN: \"number of events is stored on OSGP\".");
-
-        try {
-            Thread.sleep(250);
-        } catch (final InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-
         return this.sendEventNotification(numberOfEvents, expectedIndexes);
     }
 
@@ -244,7 +232,7 @@ public class ReceiveEventNotificationsSteps {
         LOGGER.info("THEN: \"the OSGP sends an OSLP event notification message with status {}\".", status);
 
         try {
-            verify(this.channelMock, timeout(1000).times(1)).write(any(OslpEnvelope.class));
+            verify(this.channelMock, timeout(10000).times(1)).write(any(OslpEnvelope.class));
         } catch (final Throwable t) {
             LOGGER.error("Failure: {}", t);
             return false;
@@ -259,8 +247,9 @@ public class ReceiveEventNotificationsSteps {
         LOGGER.info("THEN: \"the OSLP event notification message is not stored on OSGP\".");
 
         try {
-            verify(this.oslpDeviceRepositoryMock, atLeastOnce()).findByDeviceUid(any(String.class));
-            verify(this.eventRepositoryMock, times(0)).save(any(com.alliander.osgp.domain.core.entities.Event.class));
+            verify(this.oslpDeviceRepositoryMock, timeout(10000).atLeastOnce()).findByDeviceUid(any(String.class));
+            verify(this.eventRepositoryMock, timeout(10000).times(0)).save(
+                    any(com.alliander.osgp.domain.core.entities.Event.class));
         } catch (final Throwable t) {
             LOGGER.error("Failure: {}", t);
             return false;
@@ -270,8 +259,9 @@ public class ReceiveEventNotificationsSteps {
 
     private void setup() throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
 
-        Mockito.reset(new Object[] { this.deviceRepositoryMock, this.deviceLogItemRepositoryMock, this.channelMock,
-                this.oslpDeviceRepositoryMock, this.eventRepositoryMock });
+        Mockito.reset(new Object[] { this.deviceRepositoryMock, this.ssldRepositoryMock,
+                this.deviceLogItemRepositoryMock, this.channelMock, this.oslpDeviceRepositoryMock,
+                this.eventRepositoryMock });
 
         OslpTestUtils.configureOslpChannelHandler(this.oslpChannelHandler);
         this.oslpChannelHandler.setDeviceManagementService(this.deviceManagementService);
@@ -285,7 +275,6 @@ public class ReceiveEventNotificationsSteps {
         this.request = null;
         this.message = null;
         this.throwable = null;
-
     }
 
     private void setupMessage() throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
@@ -308,24 +297,21 @@ public class ReceiveEventNotificationsSteps {
         for (int i = 0; i < this.request.getNotificationsList().size(); i++) {
             final EventNotification event = this.request.getNotifications(i);
             final com.alliander.osgp.domain.core.entities.EventBuilder expectedEvent = new EventBuilder()
-                    .withDevice(this.device).withEventType(EventType.valueOf(event.getEvent().name()))
-                    .withDescription(event.getDescription()).withIndex(expectedIndexes[i]);
+            .withDevice(this.device).withEventType(EventType.valueOf(event.getEvent().name()))
+            .withDescription(event.getDescription()).withIndex(expectedIndexes[i]);
             expectedEvents.add(expectedEvent.build());
         }
 
         try {
-            verify(this.eventRepositoryMock, times(numberOfEvents)).save(
+            verify(this.eventRepositoryMock, timeout(10000).times(numberOfEvents)).save(
                     any(com.alliander.osgp.domain.core.entities.Event.class));
             for (final com.alliander.osgp.domain.core.entities.Event event : expectedEvents) {
-                verify(this.eventRepositoryMock, times(1)).save(eq(event));
+                verify(this.eventRepositoryMock, timeout(10000).times(1)).save(eq(event));
             }
-
-            //            verify(this.deviceRepositoryMock, times(1)).save(this.device);
         } catch (final Throwable t) {
             LOGGER.error("Failure: {}", t);
             return false;
         }
         return true;
-
     }
 }
