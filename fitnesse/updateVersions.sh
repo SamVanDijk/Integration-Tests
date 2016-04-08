@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 CONTENT_FILE=FitNesseRoot/content.txt
 DEFINE_STRING="!define"
