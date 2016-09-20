@@ -233,3 +233,7 @@
 !path ${MAVEN_REPO}/wsdl4j/wsdl4j/1.6.1/wsdl4j-1.6.1.jar
 
 *!
+!define SHARED_VERSION {3.10.0}
+!define PLATFORM_VERSION {3.10.0}
+!define PROTOCOL_ADAPTER_OSLP_VERSION {3.10.0}
+!define OSGP_VERSION {3.10.0}
