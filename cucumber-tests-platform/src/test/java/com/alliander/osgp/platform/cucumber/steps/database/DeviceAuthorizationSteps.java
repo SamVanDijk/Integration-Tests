@@ -15,6 +15,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.alliander.osgp.domain.core.entities.Device;
+import com.alliander.osgp.domain.core.entities.DeviceAuthorization;
 import com.alliander.osgp.domain.core.entities.Organisation;
 import com.alliander.osgp.domain.core.repositories.DeviceAuthorizationRepository;
 import com.alliander.osgp.domain.core.repositories.DeviceRepository;
@@ -25,14 +26,15 @@ import com.alliander.osgp.platform.cucumber.steps.Defaults;
 import cucumber.api.java.en.Given;
 
 public class DeviceAuthorizationSteps {
+
+    @Autowired
+    private DeviceAuthorizationRepository authorizationRepository;
+
     @Autowired
     private DeviceRepository deviceRepository;
 
     @Autowired
     private OrganisationRepository organizationRepository;
-
-    @Autowired
-    private DeviceAuthorizationRepository deviceAuthorizationRepository;
 
     /**
      * Generic method which adds a device authorization using the settings.
@@ -53,7 +55,8 @@ public class DeviceAuthorizationSteps {
         final DeviceFunctionGroup functionGroup = getEnum(settings, "DeviceFunctionGroup", DeviceFunctionGroup.class,
                 DeviceFunctionGroup.OWNER);
 
-        device.addAuthorization(organization, functionGroup);
+        final DeviceAuthorization authorization = device.addAuthorization(organization, functionGroup);
+        this.authorizationRepository.save(authorization);
         this.deviceRepository.save(device);
     }
 }
