@@ -88,9 +88,10 @@ public class OrganizationSteps {
         for (PlatformDomain domain : entity.getDomains()){
         	Assert.assertTrue(expectedDomains.contains(domain.toString()));
         }
+    	
     }
     
-    /**
+	/**
      * Ensure that the organization is disabled.
      * 
      * @param organizationIdentification

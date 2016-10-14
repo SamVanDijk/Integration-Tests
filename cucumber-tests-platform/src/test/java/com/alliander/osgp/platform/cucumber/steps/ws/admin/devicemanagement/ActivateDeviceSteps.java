@@ -13,23 +13,23 @@ import java.util.Map;
 
 import org.junit.Assert;
 
+import com.alliander.definitions.osgp.admin.devicemanagement_v1.ActivateDeviceRequest;
+import com.alliander.osgp.platform.cucumber.steps.Defaults;
 import com.alliander.osgp.platform.cucumber.steps.ws.admin.AdminStepsBase;
-import com.eviware.soapui.model.testsuite.TestStepResult.TestStepStatus;
+import static com.alliander.osgp.platform.cucumber.core.Helpers.getString;
 
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 
 public class ActivateDeviceSteps extends AdminStepsBase {
 
-    private static final String TEST_SUITE = "DeviceManagement";
-    private static final String TEST_CASE_NAME = "540 Activate device";
-    private static final String TEST_CASE_NAME_REQUEST = "ActivateDevice - Request 1";
-
     @When("^receiving a activate device request$")
     public void receivingAActivateDeviceRequest(final Map<String, String> requestSettings) throws Throwable {
-        PROPERTIES_MAP.put(DEVICE_IDENTIFICATION_LABEL, requestSettings.get("DeviceIdentification"));
+    	
+    	ActivateDeviceRequest request = new ActivateDeviceRequest();
+    	request.setDeviceIdentification(getString(requestSettings, Defaults.DEVICE_IDENTIFICATION_LABEL, Defaults.DEFAULT_DEVICE_IDENTIFICATION));
 
-        this.requestRunner(TestStepStatus.OK, PROPERTIES_MAP, TEST_CASE_NAME_REQUEST, TEST_CASE_NAME, TEST_SUITE);
+    	this.client.port.activateDevice(request);
     }
     
     /**

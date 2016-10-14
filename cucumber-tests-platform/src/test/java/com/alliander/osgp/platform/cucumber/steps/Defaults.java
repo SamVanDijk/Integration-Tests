@@ -7,6 +7,8 @@
  */
 package com.alliander.osgp.platform.cucumber.steps;
 
+import com.alliander.definitions.osgp.admin.devicemanagement_v1.OsgpResultType;
+
 /**
  * Defaults within the database.
  */
@@ -26,5 +28,5 @@ public class Defaults {
     public static final String DEFAULT_DEVICE_IDENTIFICATION = "TD01"; // Test Device  01
 
     // Expected values
-    public static final String EXPECTED_RESULT_OK = "OK";
+    public static final OsgpResultType EXPECTED_RESULT_OK = OsgpResultType.OK;
 }
