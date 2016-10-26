@@ -9,14 +9,17 @@
  */
 package com.alliander.osgp.platform.cucumber.steps.ws.admin.devicemanagement;
 
+import static com.alliander.osgp.platform.cucumber.core.Helpers.getString;
+
 import java.util.Map;
 
 import org.junit.Assert;
 
 import com.alliander.definitions.osgp.admin.devicemanagement_v1.ActivateDeviceRequest;
+import com.alliander.definitions.osgp.admin.devicemanagement_v1.ActivateDeviceResponse;
+import com.alliander.osgp.platform.cucumber.core.ScenarioContext;
 import com.alliander.osgp.platform.cucumber.steps.Defaults;
 import com.alliander.osgp.platform.cucumber.steps.ws.admin.AdminStepsBase;
-import static com.alliander.osgp.platform.cucumber.core.Helpers.getString;
 
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
@@ -27,9 +30,10 @@ public class ActivateDeviceSteps extends AdminStepsBase {
     public void receivingAActivateDeviceRequest(final Map<String, String> requestSettings) throws Throwable {
     	
     	ActivateDeviceRequest request = new ActivateDeviceRequest();
-    	request.setDeviceIdentification(getString(requestSettings, Defaults.DEVICE_IDENTIFICATION_LABEL, Defaults.DEFAULT_DEVICE_IDENTIFICATION));
+    	request.setDeviceIdentification(
+    			getString(requestSettings, Defaults.DEVICE_IDENTIFICATION_LABEL, Defaults.DEFAULT_DEVICE_IDENTIFICATION));
 
-    	this.client.port.activateDevice(request);
+    	ScenarioContext.Current().put("response", this.client.port.activateDevice(request));
     }
     
     /**
@@ -38,6 +42,8 @@ public class ActivateDeviceSteps extends AdminStepsBase {
      */
     @Then("^the activate device response contains$")
     public void the_activate_device_response_contains(Map<String, String> expectedResponse) throws Throwable {
-        Assert.assertTrue(this.runXpathResult.assertXpath(this.response, "/Envelope/Body/ActivateDeviceResponse/Result/text()", expectedResponse.get("Result")));
+    	ActivateDeviceResponse response = (ActivateDeviceResponse) ScenarioContext.Current().get("response");
+    	
+    	Assert.assertEquals(expectedResponse.get("Result"), response.getResult());
     }
 }
