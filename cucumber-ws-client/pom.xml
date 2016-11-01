@@ -1,0 +1,157 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.alliander.osgp</groupId>
+    <artifactId>parent-integration-tests</artifactId>
+    <version>4.3.0-SNAPSHOT</version>
+    <relativePath>../parent-integration-tests/pom.xml</relativePath>
+  </parent>
+
+  <groupId>com.alliander.osgp</groupId>
+  <artifactId>cucumber-ws-client</artifactId>
+  <packaging>jar</packaging>
+  <version>4.3.0-SNAPSHOT</version>
+  <name>cucumber-ws-client</name>
+
+  <dependencies>
+    <!-- Spring WS -->
+    <dependency>
+      <groupId>org.springframework.ws</groupId>
+      <artifactId>spring-ws-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.ws</groupId>
+      <artifactId>spring-ws-security</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.ws</groupId>
+      <artifactId>spring-ws-support</artifactId>
+    </dependency>
+
+    <!-- Apache HTTP client -->
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+    </dependency>
+
+  <dependency>
+   <groupId>org.apache.cxf</groupId>
+   <artifactId>cxf-rt-frontend-jaxws</artifactId>
+   <version>2.6.1</version>
+  </dependency>
+  <dependency>
+   <groupId>org.apache.cxf</groupId>
+   <artifactId>cxf-rt-transports-http</artifactId>
+   <version>2.6.1</version>
+  </dependency>
+
+    <dependency>
+      <groupId>com.sun.xml.ws</groupId>
+      <artifactId>jaxws-rt</artifactId>
+      <version>2.2.8</version>
+    </dependency>
+    
+    <dependency>
+    <groupId>com.sun.xml.stream</groupId>
+    <artifactId>sjsxp</artifactId>
+    <version>1.0.2</version>
+</dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+    
+    <plugin>
+    <groupId>org.apache.cxf</groupId>
+    <artifactId>cxf-codegen-plugin</artifactId>
+    <version>${cxf.version}</version>
+    <executions>
+        <execution>
+            <id>generate-sources</id>
+            <phase>generate-sources</phase>
+            <configuration>
+                <wsdlOptions>
+                    <wsdlOption>
+                        <wsdl>${basedir}/src/main/resources/wsdl/microgrids/AdHocManagement.wsdl</wsdl>
+                    </wsdlOption>
+                </wsdlOptions>
+            </configuration>
+            <goals>
+                <goal>wsdl2java</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+    
+    
+<!--       <plugin> -->
+<!--         <artifactId>maven-compiler-plugin</artifactId> -->
+<!--         <version>3.0</version> -->
+<!--         <configuration> -->
+<!--           <source>${java.version}</source> -->
+<!--           <target>${java.version}</target> -->
+<!--           <encoding>UTF-8</encoding> -->
+<!--           https://jax-ws-commons.java.net/jaxws-maven-plugin/usage.html -->
+<!--           <compilerArguments> -->
+<!--             <endorseddirs>${project.build.directory}/endorsed</endorseddirs> -->
+<!--           </compilerArguments> -->
+<!--         </configuration> -->
+<!--       </plugin> -->
+
+<!--       https://jax-ws-commons.java.net/jaxws-maven-plugin/usage.html -->
+<!--       <plugin> -->
+<!--         <groupId>org.apache.maven.plugins</groupId> -->
+<!--         <artifactId>maven-dependency-plugin</artifactId> -->
+<!--         <version>2.3</version> -->
+<!--         <executions> -->
+<!--           <execution> -->
+<!--             <phase>validate</phase> -->
+<!--             <goals> -->
+<!--               <goal>copy</goal> -->
+<!--             </goals> -->
+<!--             <configuration> -->
+<!--               <outputDirectory>${project.build.directory}/endorsed</outputDirectory> -->
+<!--               <silent>true</silent> -->
+<!--               <artifactItems> -->
+<!--                 <artifactItem> -->
+<!--                   <groupId>javax.xml.bind</groupId> -->
+<!--                   <artifactId>jaxb-api</artifactId> -->
+<!--                   <version>2.2.7</version> -->
+<!--                   <type>jar</type> -->
+<!--                 </artifactItem> -->
+<!--                 <artifactItem> -->
+<!--                   <groupId>javax.xml.ws</groupId> -->
+<!--                   <artifactId>jaxws-api</artifactId> -->
+<!--                   <version>2.2.9</version> -->
+<!--                   <type>jar</type> -->
+<!--                 </artifactItem> -->
+<!--               </artifactItems> -->
+<!--             </configuration> -->
+<!--           </execution> -->
+<!--         </executions> -->
+<!--       </plugin> -->
+
+<!--       https://jax-ws-commons.java.net/jaxws-maven-plugin/ -->
+<!--       <plugin> -->
+<!--         <groupId>org.jvnet.jax-ws-commons</groupId> -->
+<!--         <artifactId>jaxws-maven-plugin</artifactId> -->
+<!--         <version>2.3</version> -->
+<!--         <executions> -->
+<!--           <execution> -->
+<!--             <goals> -->
+<!--               <goal>wsimport</goal> -->
+<!--             </goals> -->
+<!--             <configuration> -->
+<!--               <wsdlDirectory>${basedir}/src/main/resources/wsdl/microgrids</wsdlDirectory> -->
+<!--               <packageName>com.alliander.osgp.cucumber.ws.client.microgrids.generated</packageName> -->
+<!--               <sourceDestDir>${basedir}/target/generated-sources/wsimport</sourceDestDir> -->
+<!--             </configuration> -->
+<!--           </execution> -->
+<!--         </executions> -->
+<!--       </plugin> -->
+    </plugins>
+  </build>
+
+</project>

@@ -93,5 +93,6 @@
 			configured properly yet for the Jenkins build.
 		<module>integration-tests-cucumber</module>
 		-->
+		<module>cucumber-ws-client</module>
 	</modules>
 </project>
